@@ -1,5 +1,8 @@
 package ru.masaviktoria.pandorasboxserver;
 
+
+import ru.masaviktoria.pandorasboxmodel.CommandsAndConstants;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -29,11 +32,11 @@ public class ClientHandler implements Runnable {
             while (true){
                 String clientMessage = inputStream.readUTF();
                 System.out.println("Received from client: " + clientMessage);
-                if (clientMessage.equals(ServerCommandsAndConstants.UPLOAD)){
+                if (clientMessage.equals(CommandsAndConstants.UPLOAD)){
                    String uploadFileName = inputStream.readUTF();
                    acceptFile(uploadFileName);
                 }
-                if (clientMessage.equals(ServerCommandsAndConstants.DOWNLOAD)){
+                if (clientMessage.equals(CommandsAndConstants.DOWNLOAD)){
                     String downloadFileName = inputStream.readUTF();
                     sendFile(downloadFileName);
                 }
@@ -63,7 +66,7 @@ public class ClientHandler implements Runnable {
                 serverFilesList.append(i);
                 serverFilesList.append(">>");
             }
-            sendMessageToClient(ServerCommandsAndConstants.STARTLIST + serverFilesList);
+            sendMessageToClient(CommandsAndConstants.STARTLIST + serverFilesList);
         } catch (IOException | NullPointerException e) {
             System.out.println("Server files list could not be obtained");
             e.printStackTrace();

@@ -8,10 +8,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import ru.masaviktoria.pandorasboxmodel.*;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BoxController implements Initializable {
-
 
     private Network network;
 
@@ -40,7 +39,7 @@ public class BoxController implements Initializable {
     @FXML
     public TextField loginField;
     @FXML
-    public Button localOpenButton;
+    public Button localUpButton;
     @FXML
     public Button localNewFolderButton;
     @FXML
@@ -58,7 +57,7 @@ public class BoxController implements Initializable {
     @FXML
     public Button serverDeleteButton;
     @FXML
-    public Button serverOpenButton;
+    public Button serverUpButton;
     //нужно допилить структуру папок, пока реализован простой список
     /*    @FXML
     public TreeView<FileListInfo> localTreeView;
@@ -77,8 +76,7 @@ public class BoxController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         try {
-
-            network = new Network(ClientCommandsAndConstants.PORT);
+            network = new Network(CommandsAndConstants.PORT);
             Thread localFilesListThread = new Thread(this::showLocalFiles);
             localFilesListThread.setDaemon(true);
             localFilesListThread.start();
@@ -93,30 +91,11 @@ public class BoxController implements Initializable {
 
     private void showLocalFiles() {
         Platform.runLater(() -> {
+            this.dir = System.getProperty("user.home");
+            localListView.getItems().clear();
             try {
-                StringBuilder builder = new StringBuilder(System.getProperty("user.home") + "\\Pictures");
-                this.dir = builder.toString();
-                localListView.getItems().clear();
                 localListView.getItems().addAll(streamFiles(dir, 1));
-            } catch (AccessDeniedException a) {
-                System.out.println("Access to some folders is denied");
-            } catch (IOException | NullPointerException e) {
-                System.out.println("Local files list could not be printed");
-                e.printStackTrace();
-            }
-        });
-    }
-
-    private void showServerFiles(String fileListFromServer) {
-        Platform.runLater(() -> {
-            serverListView.getItems().clear();
-            try {
-                String[] fileListArr = fileListFromServer.split(">>");
-                for (int i = 1; i < fileListArr.length; i++) {
-                    serverListView.getItems().add(fileListArr[i]);
-                }
-            } catch (Exception e) {
-                System.out.println("Server files list could not be printed");
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
@@ -125,7 +104,6 @@ public class BoxController implements Initializable {
     private Set<String> streamFiles(String directory, int depth) throws IOException {
         try (Stream<Path> stream = Files.walk(Paths.get(directory), depth)) {
             return stream
-                    .filter(file -> !Files.isDirectory(file))
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .collect(Collectors.toSet());
@@ -135,13 +113,26 @@ public class BoxController implements Initializable {
     private void readMessagesFromServer() {
         try {
             while (true) {
-                String serverMessage = network.readServerMessage();
-                System.out.println("Server: " + serverMessage);
-                if (serverMessage.startsWith(ClientCommandsAndConstants.STARTLIST)) {
-                    showServerFiles(serverMessage);
+                BoxMessage message = network.read();
+                if (message instanceof FileList fileList) {
+                    Platform.runLater(() -> {
+                        serverListView.getItems().clear();
+                        serverListView.getItems().addAll(fileList.getFiles());
+                    });
+                } else if (message instanceof FileMessage fileMessage) {
+                    Path current = Path.of(dir).resolve(fileMessage.getFileName());
+                    Files.write(current, fileMessage.getData());
+                    Platform.runLater(() -> {
+                        localListView.getItems().clear();
+                        try {
+                            localListView.getItems().addAll(streamFiles(dir, 1));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Reading of server messages was interrupted");
             e.printStackTrace();
         }
@@ -150,19 +141,7 @@ public class BoxController implements Initializable {
     public void uploadFile(MouseEvent mouseEvent) {
         try {
             String selectedFile = localListView.getSelectionModel().getSelectedItem();
-            network.sendMessageToServer(ClientCommandsAndConstants.UPLOAD);
-            network.sendMessageToServer(selectedFile);
-            System.out.println("Upload started: " + selectedFile);
-            File fileForSending = Path.of(dir).resolve(selectedFile).toFile();
-            network.getOutputStream().writeLong(fileForSending.length());
-            byte[] buffer = new byte[1024];
-            try (FileInputStream fis = new FileInputStream(fileForSending)) {
-                while (fis.available() > 0) {
-                    int read = fis.read(buffer);
-                    network.getOutputStream().write(buffer, 0, read);
-                }
-            }
-            network.getOutputStream().flush();
+            network.write(new FileMessage(Path.of(dir).resolve(selectedFile)));
             System.out.println("Upload successful");
         } catch (IOException e) {
             System.out.println("Upload unsuccessful");
@@ -173,29 +152,59 @@ public class BoxController implements Initializable {
     public void downloadFile(MouseEvent mouseEvent) {
         try {
             String selectedFile = serverListView.getSelectionModel().getSelectedItem();
-            network.sendMessageToServer(ClientCommandsAndConstants.DOWNLOAD);
-            network.sendMessageToServer(selectedFile);
             System.out.println("Download started: " + selectedFile);
-            File fileForDownloading = Path.of(dir).resolve(selectedFile).toFile();
-            long fileSize = network.getInputStream().readLong();
-            System.out.println("Length: " + fileSize);
-            try (FileOutputStream os = new FileOutputStream(fileForDownloading)) {
-                byte[] buf = new byte[1024];
-                for (int i = 0; i < (fileSize + 1023) / 1024; i++) {
-                    int read = network.getInputStream().read(buf);
-                    os.write(buf, 0, read);
-                }
-                System.out.println("File accepted");
-            } catch (IOException e) {
-                System.out.println("Reading or writing error occurred");
-                e.printStackTrace();
-            }
+            network.write(new FileRequest(selectedFile));
             System.out.println("Received file: " + selectedFile);
         } catch (IOException e) {
             System.out.println("File was not accepted");
             e.printStackTrace();
         }
-        showLocalFiles();
+    }
+
+    public void goUpLocally(MouseEvent mouseEvent) {
+        String parentDir = Path.of(dir).getParent().toString();
+        Platform.runLater(() -> {
+            try {
+                localListView.getItems().clear();
+                localListView.getItems().addAll(streamFiles(parentDir, 1));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        this.dir = parentDir;
+    }
+
+    public void checkLocalDirectory(MouseEvent mouseEvent) {
+        Path selectedPath = Path.of(dir).resolve(localListView.getSelectionModel().getSelectedItem());
+        if (Files.isDirectory(selectedPath)) {
+            Platform.runLater(() -> {
+                try {
+                    localListView.getItems().clear();
+                    localListView.getItems().addAll(streamFiles(selectedPath.toString(), 1));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            this.dir = selectedPath.toString();
+        }
+    }
+
+    public void goUpOnServer(MouseEvent mouseEvent) {
+        try {
+            String selectedFile = serverListView.getSelectionModel().getSelectedItem();
+            network.write(new PathUpRequest(selectedFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void checkServerDirectory(MouseEvent mouseEvent) {
+        try {
+            String selectedFile = serverListView.getSelectionModel().getSelectedItem();
+            network.write(new PathInRequest(selectedFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 
