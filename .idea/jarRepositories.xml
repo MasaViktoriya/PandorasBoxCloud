@@ -2,6 +2,11 @@
 <project version="4">
   <component name="RemoteRepositoriesConfiguration">
     <remote-repository>
+      <option name="id" value="5734284a-851a-4b67-95c0-a9558f3811cd" />
+      <option name="name" value="5734284a-851a-4b67-95c0-a9558f3811cd" />
+      <option name="url" value="http://repo1.maven.org/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="central" />
       <option name="name" value="Central Repository" />
       <option name="url" value="https://repo.maven.apache.org/maven2" />

@@ -1,4 +1,4 @@
-package ru.masaviktoria.pandorasboxserver;
+package ru.masaviktoria.pandorasboxserver.old.ioserver;
 
 
 import ru.masaviktoria.pandorasboxmodel.CommandsAndConstants;
