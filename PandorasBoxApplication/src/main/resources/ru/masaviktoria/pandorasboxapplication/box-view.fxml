@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox id="vBox" fx:id="vBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="779.0" prefWidth="945.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.masaviktoria.pandorasboxapplication.BoxController">
+    <AnchorPane id="anchorPane" fx:id="anchorPane" prefHeight="790.0" prefWidth="872.0" style="-fx-background-color: #003235;">
+        <ImageView id="pandorasBoxLogo" fx:id="pandorasBoxLogo" fitHeight="72.0" fitWidth="278.0" layoutX="332.0" layoutY="-2.0" pickOnBounds="true" preserveRatio="true">
+            <Image url="@pandorasBoxLogo.jpg" />
+        </ImageView>
+        <Button id="uploadButton" fx:id="uploadButton" layoutX="366.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#uploadFile" prefHeight="31.0" prefWidth="101.0" text="Upload">
+            <font>
+                <Font name="Calibri" size="17.0" />
+            </font>
+        </Button>
+        <Button id="downloadButton" fx:id="downloadButton" layoutX="479.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#downloadFile" prefHeight="31.0" prefWidth="101.0" text="Download">
+            <font>
+                <Font name="Calibri" size="18.0" />
+            </font>
+        </Button>
+        <Label id="myFilesHeader" fx:id="myFilesHeader" layoutX="278.0" layoutY="78.0" prefHeight="43.0" prefWidth="101.0" text="My files" textFill="#d3feff">
+            <font>
+                <Font name="Calibri" size="23.0" />
+            </font>
+        </Label>
+        <Button id="localNewFolderButton" fx:id="localNewFolderButton" layoutX="80.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="New">
+            <font>
+                <Font name="Calibri" size="12.0" />
+            </font>
+        </Button>
+        <Label id="theBoxHeader" fx:id="theBoxHeader" layoutX="595.0" layoutY="78.0" prefHeight="43.0" prefWidth="84.0" text="The Box" textFill="#d3feff">
+            <font>
+                <Font name="Calibri" size="23.0" />
+            </font>
+        </Label>
+        <PasswordField id="passwordField" fx:id="passwordField" layoutX="783.0" layoutY="20.0" promptText="password" />
+        <TextField id="loginField" fx:id="loginField" layoutX="627.0" layoutY="20.0" promptText="login" />
+        <Button id="serverNewFolderButton" fx:id="serverRenameButton" layoutX="810.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Rename">
+            <font>
+                <Font name="Calibri" size="12.0" />
+            </font>
+        </Button>
+        <Button id="serverRenameButton" fx:id="serverDeleteButton" layoutX="874.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Delete">
+            <font>
+                <Font name="Calibri" size="12.0" />
+            </font>
+        </Button>
+        <TextArea id="selectedFileInfoArea" fx:id="selectedFileInfoArea" editable="false" layoutX="16.0" layoutY="652.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="110.0" prefWidth="915.0" promptText="Flle info: name, size, type, modify date, path" wrapText="true">
+            <font>
+                <Font name="Calibri" size="15.0" />
+            </font>
+        </TextArea>
+      <Button fx:id="localDeleteButton" layoutX="208.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Delete">
+         <font>
+            <Font name="Calibri" size="12.0" />
+         </font>
+      </Button>
+      <Button fx:id="serverNewFolderButton" layoutX="746.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="New">
+         <font>
+            <Font name="Calibri" size="12.0" />
+         </font>
+      </Button>
+      <Button id="serverNewFolderButton" fx:id="localRenameButton" layoutX="144.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Rename">
+         <font>
+            <Font name="Calibri" size="12.0" />
+         </font>
+      </Button>
+      <Button id="localNewFolderButton" fx:id="localOpenButton" layoutX="16.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Open">
+         <font>
+            <Font name="Calibri" size="12.0" />
+         </font>
+      </Button>
+      <Button id="localNewFolderButton" fx:id="serverOpenButton" layoutX="681.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Open">
+         <font>
+            <Font name="Calibri" size="12.0" />
+         </font>
+      </Button>
+      <ListView fx:id="serverListView" layoutX="479.0" layoutY="129.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="507.0" prefWidth="447.0" />
+      <ListView fx:id="localListView" editable="true" layoutX="19.0" layoutY="129.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="507.0" prefWidth="447.0" />
+    </AnchorPane>
+</VBox>
