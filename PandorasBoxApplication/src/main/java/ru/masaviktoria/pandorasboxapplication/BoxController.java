@@ -1,6 +1,8 @@
 package ru.masaviktoria.pandorasboxapplication;
 
 import javafx.application.Platform;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -17,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +41,12 @@ public class BoxController implements Initializable {
     public PasswordField passwordField;
     @FXML
     public TextField loginField;
+    @FXML
+    public Button loginButton;
+    @FXML
+    public Label wrongCredentialsLabel;
+    @FXML
+    public Label regLabel;
     @FXML
     public Button localUpButton;
     @FXML
@@ -114,22 +123,18 @@ public class BoxController implements Initializable {
         try {
             while (true) {
                 BoxMessage message = network.read();
-                if (message instanceof FileList fileList) {
-                    Platform.runLater(() -> {
-                        serverListView.getItems().clear();
-                        serverListView.getItems().addAll(fileList.getFiles());
-                    });
-                } else if (message instanceof FileMessage fileMessage) {
-                    Path current = Path.of(dir).resolve(fileMessage.getFileName());
-                    Files.write(current, fileMessage.getData());
-                    Platform.runLater(() -> {
-                        localListView.getItems().clear();
-                        try {
-                            localListView.getItems().addAll(streamFiles(dir, 1));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                if (message instanceof AuthOK) {
+                    authOK();
+                } else if (message instanceof AuthFailed) {
+                    authFailed();
+                } else if (message instanceof FileList fileList) {
+                    showServerFiles(fileList);
+                } else if (message instanceof LogoutOK) {
+                    logoutOK();
+                } else if (message instanceof FileInfomationField fileInfomationField) {
+                    showFileInformation(fileInfomationField);
+                } else if (message instanceof FileContainer fileContainer) {
+                    saveFileFromContainer(fileContainer);
                 }
             }
         } catch (Exception e) {
@@ -138,10 +143,107 @@ public class BoxController implements Initializable {
         }
     }
 
+    public void authentication(Event mouseEvent) {
+        try {
+            network.write(new AuthRequest(loginField.getText(), passwordField.getText()));
+        } catch (IOException e) {
+            System.out.println("Authentication request failed");
+            e.printStackTrace();
+        }
+    }
+
+    // пока так, потом думаю прикрутить включение видимости пароля
+    public void registration(MouseEvent mouseEvent) {
+        Platform.runLater(() -> {
+            serverListView.getItems().clear();
+            loginField.setVisible(true);
+            passwordField.setVisible(true);
+            loginButton.setText("Create");
+            regLabel.setText("Use only a-Z and 0-9");
+            regLabel.setDisable(true);
+            wrongCredentialsLabel.setVisible(false);
+            loginButton.setOnMouseClicked((EventHandler) -> {
+                if (Pattern.matches("[a-zA-Z0-9]*", loginField.getText()) && Pattern.matches("[a-zA-Z0-9]*", passwordField.getText())) {
+                    try {
+                        network.write(new RegistrationRequest(loginField.getText(), passwordField.getText()));
+                    } catch (IOException e) {
+                        System.out.println("Registration request failed");
+                        e.printStackTrace();
+                    }
+                } else {
+                    Platform.runLater(() -> {
+                        wrongCredentialsLabel.setVisible(true);
+                        System.out.println("Wrong format of login or password");
+                    });
+                }
+            });
+        });
+    }
+
+    private void authOK() {
+        Platform.runLater(() -> {
+            wrongCredentialsLabel.setVisible(false);
+            loginField.setVisible(false);
+            passwordField.setVisible(false);
+            regLabel.setVisible(false);
+            loginButton.setOnMouseClicked((EventHandler) event -> logout());
+            loginButton.setText("Log out");
+        });
+        System.out.println("Authentication successful");
+    }
+
+//неплохо бы допилить объяснение причины фейла (что неверное - логин, пароль, запрещенные символы при регистрации или попытка зарегать существующий логин)
+    private void authFailed() {
+        Platform.runLater(() -> {
+            wrongCredentialsLabel.setVisible(true);
+            loginField.clear();
+            passwordField.clear();
+        });
+        System.out.println("Authentication failed: login or password is incorrect");
+    }
+
+    private void logout() {
+        try {
+            network.write(new LogoutRequest());
+        } catch (IOException e) {
+            System.out.println("Logout request failed");
+            e.printStackTrace();
+        }
+    }
+
+    private void logoutOK() {
+        Platform.runLater(() -> {
+            serverListView.getItems().clear();
+            loginField.clear();
+            passwordField.clear();
+            loginField.setVisible(true);
+            passwordField.setVisible(true);
+            loginButton.setText("Log in");
+            loginButton.setOnMouseClicked((EventHandler) this::authentication);
+            regLabel.setText("Create account");
+            regLabel.setDisable(false);
+            regLabel.setVisible(true);
+        });
+        System.out.println("Logout successful");
+    }
+
+    private void showServerFiles(FileList fileList) {
+        Platform.runLater(() -> {
+            serverListView.getItems().clear();
+            serverListView.getItems().addAll(fileList.getFiles());
+        });
+    }
+
+    private void showFileInformation(FileInfomationField fileInfomationField) {
+        Platform.runLater(() -> {
+            selectedFileInfoArea.setText(fileInfomationField.getInformation());
+        });
+    }
+
     public void uploadFile(MouseEvent mouseEvent) {
         try {
             String selectedFile = localListView.getSelectionModel().getSelectedItem();
-            network.write(new FileMessage(Path.of(dir).resolve(selectedFile)));
+            network.write(new FileContainer(Path.of(dir).resolve(selectedFile)));
             System.out.println("Upload successful");
         } catch (IOException e) {
             System.out.println("Upload unsuccessful");
@@ -154,9 +256,28 @@ public class BoxController implements Initializable {
             String selectedFile = serverListView.getSelectionModel().getSelectedItem();
             System.out.println("Download started: " + selectedFile);
             network.write(new FileRequest(selectedFile));
-            System.out.println("Received file: " + selectedFile);
         } catch (IOException e) {
             System.out.println("File was not accepted");
+            e.printStackTrace();
+        }
+    }
+
+    private void saveFileFromContainer(FileContainer fileContainer) {
+        try {
+            Path current = Path.of(dir).resolve(fileContainer.getFileName());
+            Files.write(current, fileContainer.getData());
+            System.out.println("Received file: " + fileContainer.getFileName());
+            Platform.runLater(() -> {
+                localListView.getItems().clear();
+                try {
+                    localListView.getItems().addAll(streamFiles(dir, 1));
+                } catch (IOException e) {
+                    System.out.println("Local files listing error");
+                    e.printStackTrace();
+                }
+            });
+        } catch (IOException e) {
+            System.out.println("File saving unsuccessful");
             e.printStackTrace();
         }
     }
@@ -168,6 +289,7 @@ public class BoxController implements Initializable {
                 localListView.getItems().clear();
                 localListView.getItems().addAll(streamFiles(parentDir, 1));
             } catch (IOException e) {
+                System.out.println("Local navigation error");
                 e.printStackTrace();
             }
         });
@@ -182,6 +304,7 @@ public class BoxController implements Initializable {
                     localListView.getItems().clear();
                     localListView.getItems().addAll(streamFiles(selectedPath.toString(), 1));
                 } catch (IOException e) {
+                    System.out.println("Local navigation error");
                     e.printStackTrace();
                 }
             });
@@ -194,6 +317,7 @@ public class BoxController implements Initializable {
             String selectedFile = serverListView.getSelectionModel().getSelectedItem();
             network.write(new PathUpRequest(selectedFile));
         } catch (IOException e) {
+            System.out.println("Server navigation error");
             e.printStackTrace();
         }
     }
@@ -203,6 +327,7 @@ public class BoxController implements Initializable {
             String selectedFile = serverListView.getSelectionModel().getSelectedItem();
             network.write(new PathInRequest(selectedFile));
         } catch (IOException e) {
+            System.out.println("Server navigation error");
             e.printStackTrace();
         }
     }

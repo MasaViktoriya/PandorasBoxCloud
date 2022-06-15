@@ -1,7 +1,6 @@
 module ru.masaviktoria.pandorasboxapplication {
     requires javafx.controls;
     requires javafx.fxml;
-    requires lombok;
     requires io.netty.codec;
     requires ru.masaviktoria.model;
 

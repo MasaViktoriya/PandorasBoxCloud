@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Data
-public class FileMessage implements BoxMessage {
+public class FileContainer implements BoxMessage {
     private final long fileSize;
     private final byte[] data;
     private final String fileName;
@@ -26,7 +26,7 @@ public class FileMessage implements BoxMessage {
         }
     }
 
-    public FileMessage(Path path) throws IOException {
+    public FileContainer(Path path) throws IOException {
         data = Files.readAllBytes(path);
         fileName = path.getFileName().toString();
         if (Files.isDirectory(path)) {

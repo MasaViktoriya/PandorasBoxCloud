@@ -12,7 +12,6 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.extern.slf4j.Slf4j;
 import ru.masaviktoria.pandorasboxmodel.CommandsAndConstants;
-import ru.masaviktoria.pandorasboxserver.handler.BoxFileHandler;
 
 @Slf4j
 public class BoxServer {
