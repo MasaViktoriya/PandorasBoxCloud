@@ -1,39 +1,32 @@
 package ru.masaviktoria.pandorasboxapplication;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
+import ru.masaviktoria.pandorasboxmodel.BoxMessage;
+
 import java.io.IOException;
 import java.net.Socket;
 
 public class Network {
-    private  final int port;
 
+    private ObjectDecoderInputStream inputStream;
+    private ObjectEncoderOutputStream outputStream;
 
-
-    private DataInputStream inputStream;
-    private DataOutputStream outputStream;
-
-    public Network (int port) throws IOException {
-        this.port = port;
+    public Network(int port) throws IOException {
         Socket socket = new Socket("localhost", port);
-        inputStream = new DataInputStream(socket.getInputStream());
-        outputStream = new DataOutputStream(socket.getOutputStream());
+        outputStream = new ObjectEncoderOutputStream(socket.getOutputStream());
+        inputStream = new ObjectDecoderInputStream(socket.getInputStream());
     }
 
-    public String readServerMessage () throws IOException {
-        return inputStream.readUTF();
+    public BoxMessage read() throws IOException, ClassNotFoundException {
+        return (BoxMessage) inputStream.readObject();
     }
 
-    public  void sendMessageToServer(String clientsMessage) throws IOException {
-        outputStream.writeUTF(clientsMessage);
+    public void write(BoxMessage msg) throws IOException {
+        outputStream.writeObject(msg);
         outputStream.flush();
     }
 
-    public DataOutputStream getOutputStream (){
-        return this.outputStream;
-    }
-    public DataInputStream getInputStream() {
-        return inputStream;
-    }
+
 }
 
