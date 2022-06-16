@@ -30,7 +30,7 @@ public class BoxServer {
                             socketChannel.pipeline().addLast(
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
-                                    new BoxFileHandler()
+                                    new BoxCommandHandler()
                             );
                         }
                     });

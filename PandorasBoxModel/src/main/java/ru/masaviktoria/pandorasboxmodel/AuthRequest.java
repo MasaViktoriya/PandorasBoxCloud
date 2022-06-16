@@ -3,7 +3,7 @@ package ru.masaviktoria.pandorasboxmodel;
 import lombok.Data;
 
 @Data
-public class AuthRequest implements BoxMessage{
+public class AuthRequest implements BoxCommand {
     private String login;
     private String password;
 

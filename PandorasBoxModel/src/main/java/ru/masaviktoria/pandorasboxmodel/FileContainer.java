@@ -5,19 +5,26 @@ import lombok.Data;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.io.FilenameUtils;
 
 @Data
-public class FileContainer implements BoxMessage {
+public class FileContainer implements BoxCommand {
     private final long fileSize;
-    private final byte[] data;
+    private final byte[] fileData;
     private final String fileName;
-    private FileType fileType;
+    private FileOrDirectory fileOrDirectory;
+    private final String fileType;
+    private String fileServerPath;
+    private String fileSharingLink;
+    private String fileOwner;
+//todo: не хватает поля fileLastModified
 
-    public enum FileType {
+// todo: возможно, enum не понадобится
+    public enum FileOrDirectory {
         FILE("F"), DIRECTORY("D");
         private String name;
 
-        FileType(String name) {
+        FileOrDirectory(String name) {
             this.name = name;
         }
 
@@ -27,14 +34,16 @@ public class FileContainer implements BoxMessage {
     }
 
     public FileContainer(Path path) throws IOException {
-        data = Files.readAllBytes(path);
+        fileData = Files.readAllBytes(path);
         fileName = path.getFileName().toString();
         if (Files.isDirectory(path)) {
-            this.fileType = FileType.DIRECTORY;
+            this.fileOrDirectory = FileOrDirectory.DIRECTORY;
             this.fileSize = -1;
+            this.fileType = "dir";
         } else {
-            this.fileType = FileType.FILE;
+            this.fileOrDirectory = FileOrDirectory.FILE;
             this.fileSize = Files.size(path);
+            this.fileType = FilenameUtils.getExtension(fileName);
         }
     }
 }

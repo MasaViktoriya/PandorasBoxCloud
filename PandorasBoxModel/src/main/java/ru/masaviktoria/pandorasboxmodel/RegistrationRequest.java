@@ -2,7 +2,7 @@ package ru.masaviktoria.pandorasboxmodel;
 
 import lombok.Data;
 @Data
-public class RegistrationRequest implements BoxMessage{
+public class RegistrationRequest implements BoxCommand {
     private String newLogin;
     private String newPassword;
 

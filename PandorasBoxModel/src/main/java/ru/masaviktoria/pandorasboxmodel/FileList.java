@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Data
-public class FileList implements BoxMessage {
+public class FileList implements BoxCommand {
     private final List<String> files;
 
     public FileList(Path path) throws IOException {
