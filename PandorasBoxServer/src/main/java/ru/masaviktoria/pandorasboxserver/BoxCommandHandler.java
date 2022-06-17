@@ -21,26 +21,32 @@ public class BoxCommandHandler extends SimpleChannelInboundHandler<BoxCommand> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, BoxCommand boxCommand) throws Exception {
         try {
-            HandlingResult handlingResult = new HandlingResult();
+            ProcessingResult processingResult = new ProcessingResult();
             if (boxCommand instanceof AuthRequest authRequest) {
-                handlingResult = RegAndAuthService.authRequestHandle(authRequest);
+                processingResult = RegAndAuthService.authRequestHandle(authRequest);
             } else if (boxCommand instanceof RegistrationRequest registrationRequest) {
-                handlingResult = RegAndAuthService.registrationRequestHandle(registrationRequest);
+                processingResult = RegAndAuthService.registrationRequestHandle(registrationRequest);
             } else if (boxCommand instanceof LogoutRequest) {
-                handlingResult = RegAndAuthService.logoutRequestHandle();
+                processingResult = RegAndAuthService.logoutRequestHandle();
             } else if (boxCommand instanceof FileRequest fileRequest) {
-                handlingResult = FileHandlingService.fileRequestHandle(fileRequest, currentDir);
+                processingResult = FileHandlingService.fileRequestHandle(fileRequest, currentDir);
             } else if (boxCommand instanceof FileContainer fileContainer) {
-                handlingResult = FileHandlingService.fileContainerHandle(fileContainer, currentDir, user);
+                processingResult = FileHandlingService.fileContainerHandle(fileContainer, currentDir, user);
             } else if (boxCommand instanceof PathUpRequest) {
-                handlingResult = UIService.pathUpRequestHandle(currentDir);
+                processingResult = UIService.pathUpRequestHandle(currentDir);
             } else if (boxCommand instanceof PathInRequest pathInRequest) {
-                handlingResult = UIService.pathInRequestHandle(pathInRequest, currentDir);
+                processingResult = UIService.pathInRequestHandle(pathInRequest, currentDir);
+            } else if (boxCommand instanceof  NewFolderRequest newFolderRequest) {
+                processingResult = UIService.newFolderHandle(newFolderRequest, currentDir);
+            } else if (boxCommand instanceof  RenameRequest renameRequest){
+                processingResult = UIService.renameFileOrDirectory(renameRequest, currentDir);
+            } else if (boxCommand instanceof  DeleteRequest deleteRequest){
+                processingResult = UIService.deleteFileOrDirectory(deleteRequest, currentDir);
             }
-            updateUserState(handlingResult);
-            ctx.writeAndFlush(handlingResult.getCommand());
-            if(handlingResult.getCommand() instanceof AuthOK){
-                ctx.writeAndFlush(new FileList(handlingResult.getNewCurrentDir()));
+            updateUserState(processingResult);
+            ctx.writeAndFlush(processingResult.getCommand());
+            if(processingResult.getCommand() instanceof AuthOK){
+                ctx.writeAndFlush(new FileList(processingResult.getNewCurrentDir()));
             }
         } catch (Exception e) {
             System.out.println("Runtime exception occurred");
@@ -48,23 +54,12 @@ public class BoxCommandHandler extends SimpleChannelInboundHandler<BoxCommand> {
         }
     }
 
-    private void updateUserState(HandlingResult handlingResult) {
-        if (handlingResult.getNewCurrentDir() !=null) {
-            currentDir = handlingResult.getNewCurrentDir();
+    private void updateUserState(ProcessingResult processingResult) {
+        if (processingResult.getNewCurrentDir() !=null) {
+            currentDir = processingResult.getNewCurrentDir();
         }
-        if (handlingResult.getUser() != null) {
-            user = handlingResult.getUser();
+        if (processingResult.getUser() != null) {
+            user = processingResult.getUser();
         }
     }
 }
-
-    // update state fields
-            /*for(var field : state.updatedFilds)
-            {
-                 switch (field.Key){
-                     case StateField.CurrenDir : currentDir = field.value; break;
-                     case //
-                 }
-            }*/
-
-

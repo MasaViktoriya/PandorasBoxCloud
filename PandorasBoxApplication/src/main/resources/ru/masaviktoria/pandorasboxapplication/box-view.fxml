@@ -2,8 +2,9 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
@@ -12,96 +13,126 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox id="vBox" fx:id="vBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="779.0" prefWidth="945.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.masaviktoria.pandorasboxapplication.BoxController">
-    <AnchorPane id="anchorPane" fx:id="anchorPane" prefHeight="790.0" prefWidth="872.0" style="-fx-background-color: #003235;">
-        <ImageView id="pandorasBoxLogo" fx:id="pandorasBoxLogo" fitHeight="72.0" fitWidth="278.0" layoutX="-4.0" layoutY="-2.0" pickOnBounds="true" preserveRatio="true">
+<VBox id="vBox" fx:id="vBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="950.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.masaviktoria.pandorasboxapplication.BoxController">
+    <AnchorPane id="anchorPane" fx:id="anchorPane" prefHeight="950.0" prefWidth="1280.0" style="-fx-background-color: #003235;">
+        <ImageView id="pandorasBoxLogo" fx:id="pandorasBoxLogo" fitHeight="72.0" fitWidth="278.0" layoutX="499.0" layoutY="-1.0" pickOnBounds="true" preserveRatio="true">
             <Image url="@pandorasBoxLogo.jpg" />
         </ImageView>
-        <Button id="uploadButton" fx:id="uploadButton" layoutX="365.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#uploadFile" prefHeight="31.0" prefWidth="101.0" text="Upload">
+      <Label fx:id="loginLabel" layoutX="17.0" layoutY="21.0" prefHeight="31.0" prefWidth="495.0" text="login:" textFill="#d4f6f8">
+         <font>
+            <Font name="Calibri" size="24.0" />
+         </font>
+      </Label>
+        <Label id="myFilesHeader" fx:id="myFilesHeader" layoutX="322.0" layoutY="78.0" prefHeight="43.0" prefWidth="101.0" text="My files" textFill="#d4f6f8">
+            <font>
+                <Font name="Calibri" size="23.0" />
+            </font>
+        </Label>
+        <Label id="theBoxHeader" fx:id="theBoxHeader" layoutX="871.0" layoutY="78.0" prefHeight="43.0" prefWidth="84.0" text="The Box" textFill="#d4f6f8">
+            <font>
+                <Font name="Calibri" size="23.0" />
+            </font>
+        </Label>
+        <Button id="uploadButton" fx:id="uploadButton" layoutX="533.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#uploadFile" prefHeight="31.0" prefWidth="101.0" text="Upload">
             <font>
                 <Font name="Calibri" size="17.0" />
             </font>
         </Button>
-        <Button id="downloadButton" fx:id="downloadButton" layoutX="480.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#downloadFile" prefHeight="31.0" prefWidth="101.0" text="Download">
+        <Button id="downloadButton" fx:id="downloadButton" layoutX="645.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#downloadFile" prefHeight="31.0" prefWidth="101.0" text="Download">
             <font>
                 <Font name="Calibri" size="18.0" />
             </font>
         </Button>
-        <Label id="myFilesHeader" fx:id="myFilesHeader" layoutX="278.0" layoutY="78.0" prefHeight="43.0" prefWidth="101.0" text="My files" textFill="#d4f6f8">
-            <font>
-                <Font name="Calibri" size="23.0" />
-            </font>
-        </Label>
-        <Button id="localNewFolderButton" fx:id="localNewFolderButton" layoutX="80.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="New">
-            <font>
-                <Font name="Calibri" size="12.0" />
-            </font>
-        </Button>
-        <Label id="theBoxHeader" fx:id="theBoxHeader" layoutX="594.0" layoutY="78.0" prefHeight="43.0" prefWidth="84.0" text="The Box" textFill="#d4f6f8">
-            <font>
-                <Font name="Calibri" size="23.0" />
-            </font>
-        </Label>
-        <PasswordField id="passwordField" fx:id="passwordField" layoutX="739.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="130.0" promptText="password">
+
+        <PasswordField id="passwordField" fx:id="passwordField" layoutX="997.0" layoutY="19.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="27.0" prefWidth="200.0" promptText="password">
          <font>
             <Font name="Calibri" size="12.0" />
          </font></PasswordField>
-        <TextField id="loginField" fx:id="loginField" layoutX="602.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="130.0" promptText="login">
+        <TextField id="loginField" fx:id="loginField" layoutX="789.0" layoutY="19.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="27.0" prefWidth="200.0" promptText="login">
          <font>
             <Font name="Calibri" size="12.0" />
          </font></TextField>
-        <Button id="serverRenameButton" fx:id="serverRenameButton" layoutX="808.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Rename">
+        <Button id="localNewFolderButton" fx:id="localNewFolderButton" layoutX="16.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#createNewLocalDirectory" prefHeight="31.0" prefWidth="57.0" text="New">
+        <font>
+            <Font name="Calibri" size="12.0" />
+        </font>
+    </Button>
+        <Button id="serverRenameButton" fx:id="serverRenameButton" layoutX="1140.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#renameSelectedServerFileOrDirectory" prefHeight="31.0" prefWidth="57.0" text="Rename">
             <font>
                 <Font name="Calibri" size="12.0" />
             </font>
         </Button>
-        <Button id="serverDeleteButton" fx:id="serverDeleteButton" layoutX="872.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Delete">
+        <Button id="serverDeleteButton" fx:id="serverDeleteButton" layoutX="1205.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#deleteSelectedServerFileOrDirectory" prefHeight="31.0" prefWidth="57.0" text="Delete">
             <font>
                 <Font name="Calibri" size="12.0" />
             </font>
         </Button>
-        <TextArea id="selectedFileInfoArea" fx:id="selectedFileInfoArea" editable="false" layoutX="16.0" layoutY="652.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="110.0" prefWidth="913.0" promptText="Flle info: name, size, type, modify date, path" wrapText="true">
+        <TextArea id="selectedFileInfoArea" fx:id="selectedFileInfoArea" editable="false" layoutX="16.0" layoutY="825.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="109.0" prefWidth="1248.0" promptText="Flle info: name, size, type, modify date, path" wrapText="true">
             <font>
                 <Font name="Calibri" size="15.0" />
             </font>
         </TextArea>
-      <Button id="localDeleteButton" fx:id="localDeleteButton" layoutX="208.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Delete">
+      <Button id="localDeleteButton" fx:id="localDeleteButton" layoutX="144.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#deleteSelectedLocalFileOrDirectory" prefHeight="31.0" prefWidth="57.0" text="Delete">
          <font>
             <Font name="Calibri" size="12.0" />
          </font>
       </Button>
-      <Button id="serverNewFolderButton" fx:id="serverNewFolderButton" layoutX="744.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="New">
+      <Button id="serverNewFolderButton" fx:id="serverNewFolderButton" layoutX="1075.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#createNewServerDirectory" prefHeight="31.0" prefWidth="57.0" text="New">
          <font>
             <Font name="Calibri" size="12.0" />
          </font>
       </Button>
-      <Button id="localRenameButton" fx:id="localRenameButton" layoutX="144.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="57.0" text="Rename">
+      <Button id="localRenameButton" fx:id="localRenameButton" layoutX="80.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#renameSelectedLocalFileOrDirectory" prefHeight="31.0" prefWidth="57.0" text="Rename">
          <font>
             <Font name="Calibri" size="12.0" />
          </font>
       </Button>
-      <Button id="localUpButton" fx:id="localUpButton" layoutX="16.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#goUpLocally" prefHeight="31.0" prefWidth="57.0" text="Up ^">
+      <TextField id="localCurrentFolderTextField" fx:id="localCurrentFolderTextField" editable="false" layoutX="37.0" layoutY="123.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="597.0" text="Current: ">
+         <font>
+            <Font name="Calibri Bold" size="12.0" />
+         </font>
+      </TextField>
+      <TextField id="serverCurrentFolderTextField" fx:id="serverCurrentFolderTextField" editable="false" layoutX="666.0" layoutY="123.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="597.0" text="Current:  ">
+         <font>
+            <Font name="Calibri Bold" size="12.0" />
+         </font>
+      </TextField>
+      <Button id="localUpButton" fx:id="localUpButton" graphicTextGap="3.0" layoutX="16.0" layoutY="123.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#goUpLocally" prefHeight="25.0" prefWidth="23.0" text="^">
+         <font>
+            <Font name="Calibri Bold" size="12.0" />
+         </font>
+      </Button>
+      <Button id="serverUpButton" fx:id="serverUpButton" layoutX="645.0" layoutY="123.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#goUpOnServer" prefHeight="25.0" prefWidth="23.0" text="^">
+         <font>
+            <Font name="Calibri Bold" size="12.0" />
+         </font>
+      </Button>
+      <Button id="loginButton" fx:id="loginButton" layoutX="1205.0" layoutY="19.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#authorizationRequest" prefHeight="26.0" prefWidth="57.0" text="Log in">
          <font>
             <Font name="Calibri" size="12.0" />
          </font>
       </Button>
-      <Button id="serverUpButton" fx:id="serverUpButton" layoutX="680.0" layoutY="84.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#goUpOnServer" prefHeight="31.0" prefWidth="57.0" text="Up ^">
+      <Label id="regLabel" fx:id="regLabel" alignment="CENTER_RIGHT" layoutX="1029.0" layoutY="48.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#registrationRequest" prefHeight="17.0" prefWidth="232.0" text="Create account" textAlignment="RIGHT" textFill="#d4f6f8" />
+      <Label id="wrongCredentialsLabel" fx:id="wrongCredentialsLabel" layoutX="773.0" layoutY="2.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="54.0" prefWidth="14.0" text="!" textFill="#d30000" visible="false">
          <font>
-            <Font name="Calibri" size="12.0" />
-         </font>
-      </Button>
-      <ListView fx:id="serverListView" layoutX="480.0" layoutY="129.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#checkServerDirectory" prefHeight="507.0" prefWidth="449.0" />
-      <ListView fx:id="localListView" editable="true" layoutX="17.0" layoutY="129.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#checkLocalDirectory" prefHeight="507.0" prefWidth="449.0" />
-      <Button id="loginButton" fx:id="loginButton" layoutX="876.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#authorizationRequest" prefHeight="25.0" prefWidth="53.0" text="Log in">
-         <font>
-            <Font name="Calibri" size="12.0" />
-         </font>
-      </Button>
-      <Label id="regLabel" fx:id="regLabel" alignment="CENTER_RIGHT" layoutX="790.0" layoutY="48.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#registrationRequest" prefHeight="17.0" prefWidth="139.0" text="Create account" textAlignment="RIGHT" textFill="#d4f6f8" />
-      <Label id="wrongCredentialsLabel" fx:id="wrongCredentialsLabel" layoutX="587.0" layoutY="6.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="54.0" prefWidth="14.0" text="!" textFill="#d30000" visible="false">
-         <font>
-            <Font name="Lucida Sans Unicode" size="33.0" />
+            <Font name="Lucida Sans Unicode" size="38.0" />
          </font>
       </Label>
+      <TableView id="localFilesTable" fx:id="localFilesTable" layoutX="16.0" layoutY="147.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#checkLocalDirectory" prefHeight="667.0" prefWidth="618.0">
+        <columns>
+          <TableColumn id="localTypeColumn" fx:id="localTypeColumn" editable="false" maxWidth="22.0" minWidth="22.0" prefWidth="22.0" resizable="false" sortType="DESCENDING" />
+          <TableColumn id="localFileOrDirectoryName" fx:id="localFileOrDirectoryName" maxWidth="1200.0" minWidth="348.0" prefWidth="348.0" text="Name" />
+            <TableColumn id="localFileSize" fx:id="localFileSize" maxWidth="300.0" minWidth="50.0" prefWidth="130.0" text="Size" />
+            <TableColumn id="localLastModifiedColumn" fx:id="localLastModifiedColumn" maxWidth="300.0" minWidth="50.0" prefWidth="130.0" text="Changed" />
+        </columns>
+      </TableView>
+      <TableView id="serverFilesTable" fx:id="serverFilesTable" layoutX="645.0" layoutY="147.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#checkServerDirectory" prefHeight="667.0" prefWidth="618.0">
+         <columns>
+            <TableColumn id="serverTypeColumn" fx:id="serverTypeColumn" editable="false" maxWidth="22.0" minWidth="22.0" prefWidth="22.0" resizable="false" sortType="DESCENDING" />
+            <TableColumn id="serverFileOrDirectoryName" fx:id="serverFileOrDirectoryName" maxWidth="1200.0" minWidth="348.0" prefWidth="348.0" text="Name" />
+            <TableColumn id="serverFileSize" fx:id="serverFileSize" maxWidth="300.0" minWidth="50.0" prefWidth="130.0" text="Size" />
+            <TableColumn id="serverLastModifiedColumn" fx:id="serverLastModifiedColumn" maxWidth="300.0" minWidth="50.0" prefWidth="130.0" text="Changed" />
+         </columns>
+      </TableView>
     </AnchorPane>
 </VBox>

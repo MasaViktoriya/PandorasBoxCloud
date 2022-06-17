@@ -1,7 +1,7 @@
 package ru.masaviktoria.pandorasboxserver.services;
 
 import ru.masaviktoria.pandorasboxmodel.*;
-import ru.masaviktoria.pandorasboxserver.HandlingResult;
+import ru.masaviktoria.pandorasboxserver.ProcessingResult;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +11,8 @@ import java.sql.SQLException;
 
 public class RegAndAuthService {
 
-    public static HandlingResult registrationRequestHandle(RegistrationRequest registrationRequest) throws IOException {
+    //todo: возврат причины фейла на клиент
+    public static ProcessingResult registrationRequestHandle(RegistrationRequest registrationRequest) throws IOException {
         if (!checkExistingUser(registrationRequest.getNewLogin())) {
             SQLService.insertToLoginsPasswords(registrationRequest.getNewLogin(), registrationRequest.getNewPassword());
             System.out.println("New user created in database");
@@ -19,10 +20,10 @@ public class RegAndAuthService {
             Files.createDirectory(newCurrentDir);
             System.out.println("New folder " + registrationRequest.getNewLogin() + " created in " + CommandsAndConstants.SERVERROOTDIRECTORY);
             String user = registrationRequest.getNewLogin();
-            return new HandlingResult(new AuthOK(), newCurrentDir, user);
+            return new ProcessingResult(new AuthOK(user), newCurrentDir, user);
         } else {
             System.out.println("User " + registrationRequest.getNewLogin() + " already exists");
-            return new HandlingResult(new AuthFailed());
+            return new ProcessingResult(new AuthFailed());
         }
     }
 
@@ -41,15 +42,16 @@ public class RegAndAuthService {
         return false;
     }
 
-    public static HandlingResult authRequestHandle(AuthRequest authRequest) {
+    //todo: возврат причины фейла на клиент
+    public static ProcessingResult authRequestHandle(AuthRequest authRequest) {
         if (checkCredentials(authRequest.getLogin(), authRequest.getPassword())) {
             Path newCurrentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY).resolve(authRequest.getLogin());
             String user = authRequest.getLogin();
             System.out.println("Authorisation successful");
-            return new HandlingResult(new AuthOK(), newCurrentDir, user);
+            return new ProcessingResult(new AuthOK(user), newCurrentDir, user);
         } else {
             System.out.println("Login or password is incorrect");
-            return new HandlingResult(new AuthFailed());
+            return new ProcessingResult(new AuthFailed());
         }
     }
 
@@ -68,11 +70,11 @@ public class RegAndAuthService {
         return false;
     }
 
-    //todo: сброс юзера
-    public static HandlingResult logoutRequestHandle() {
+    //todo: сброс юзера в null?? а есть ли смысл
+    public static ProcessingResult logoutRequestHandle() {
         Path newCurrentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY);
         System.out.println("User logged out");
-        return new HandlingResult(new LogoutOK(), newCurrentDir);
+        return new ProcessingResult(new LogoutOK(), newCurrentDir, "");
     }
 }
 

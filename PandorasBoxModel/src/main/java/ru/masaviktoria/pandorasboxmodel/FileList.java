@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 
 @Data
 public class FileList implements BoxCommand {
-    private final List<String> files;
+    private List<FileListMappingInfo> files;
+    private String currentDir;
 
     public FileList(Path path) throws IOException {
-        files = Files.list(path)
-                .map(p -> p.getFileName().toString())
-                .collect(Collectors.toList());
+        this.files = Files.list(path).map(FileListMappingInfo::new).collect(Collectors.toList());
+        this.currentDir = path.toString();
     }
 }
