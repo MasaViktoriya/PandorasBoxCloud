@@ -2,7 +2,7 @@ package ru.masaviktoria.pandorasboxapplication;
 
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
-import ru.masaviktoria.pandorasboxmodel.BoxMessage;
+import ru.masaviktoria.pandorasboxmodel.BoxCommand;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -18,11 +18,11 @@ public class Network {
         inputStream = new ObjectDecoderInputStream(socket.getInputStream());
     }
 
-    public BoxMessage read() throws IOException, ClassNotFoundException {
-        return (BoxMessage) inputStream.readObject();
+    public BoxCommand read() throws IOException, ClassNotFoundException {
+        return (BoxCommand) inputStream.readObject();
     }
 
-    public void write(BoxMessage msg) throws IOException {
+    public void write(BoxCommand msg) throws IOException {
         outputStream.writeObject(msg);
         outputStream.flush();
     }

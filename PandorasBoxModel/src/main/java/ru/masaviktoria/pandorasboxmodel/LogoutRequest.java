@@ -1,5 +1,5 @@
 package ru.masaviktoria.pandorasboxmodel;
 
-public class LogoutRequest implements BoxMessage{
+public class LogoutRequest implements BoxCommand {
     public LogoutRequest(){}
 }

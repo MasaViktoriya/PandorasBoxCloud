@@ -92,12 +92,12 @@
       </Button>
       <ListView fx:id="serverListView" layoutX="480.0" layoutY="129.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#checkServerDirectory" prefHeight="507.0" prefWidth="449.0" />
       <ListView fx:id="localListView" editable="true" layoutX="17.0" layoutY="129.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#checkLocalDirectory" prefHeight="507.0" prefWidth="449.0" />
-      <Button id="loginButton" fx:id="loginButton" layoutX="876.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#authentication" prefHeight="25.0" prefWidth="53.0" text="Log in">
+      <Button id="loginButton" fx:id="loginButton" layoutX="876.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#authorizationRequest" prefHeight="25.0" prefWidth="53.0" text="Log in">
          <font>
             <Font name="Calibri" size="12.0" />
          </font>
       </Button>
-      <Label id="regLabel" fx:id="regLabel" alignment="CENTER_RIGHT" layoutX="790.0" layoutY="48.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#registration" prefHeight="17.0" prefWidth="139.0" text="Create account" textAlignment="RIGHT" textFill="#d4f6f8" />
+      <Label id="regLabel" fx:id="regLabel" alignment="CENTER_RIGHT" layoutX="790.0" layoutY="48.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#registrationRequest" prefHeight="17.0" prefWidth="139.0" text="Create account" textAlignment="RIGHT" textFill="#d4f6f8" />
       <Label id="wrongCredentialsLabel" fx:id="wrongCredentialsLabel" layoutX="587.0" layoutY="6.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="54.0" prefWidth="14.0" text="!" textFill="#d30000" visible="false">
          <font>
             <Font name="Lucida Sans Unicode" size="33.0" />
