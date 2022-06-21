@@ -13,9 +13,11 @@ public class Network {
     private ObjectEncoderOutputStream outputStream;
 
     public Network(int port) throws IOException {
-        Socket socket = new Socket("localhost", port);
+        Socket socket = null;
+        socket = new Socket("localhost", port);
         outputStream = new ObjectEncoderOutputStream(socket.getOutputStream());
         inputStream = new ObjectDecoderInputStream(socket.getInputStream());
+
     }
 
     public BoxCommand read() throws IOException, ClassNotFoundException {
@@ -26,7 +28,5 @@ public class Network {
         outputStream.writeObject(msg);
         outputStream.flush();
     }
-
-
 }
 

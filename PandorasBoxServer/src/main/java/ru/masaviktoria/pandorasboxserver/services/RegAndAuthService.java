@@ -11,7 +11,6 @@ import java.sql.SQLException;
 
 public class RegAndAuthService {
 
-    //todo: возврат причины фейла на клиент
     public static ProcessingResult registrationRequestHandle(RegistrationRequest registrationRequest) throws IOException {
         if (!checkExistingUser(registrationRequest.getNewLogin())) {
             SQLService.insertToLoginsPasswords(registrationRequest.getNewLogin(), registrationRequest.getNewPassword());
@@ -23,7 +22,7 @@ public class RegAndAuthService {
             return new ProcessingResult(new AuthOK(user), newCurrentDir, user);
         } else {
             System.out.println("User " + registrationRequest.getNewLogin() + " already exists");
-            return new ProcessingResult(new AuthFailed());
+            return new ProcessingResult(new RegistrationFailed());
         }
     }
 
@@ -42,7 +41,6 @@ public class RegAndAuthService {
         return false;
     }
 
-    //todo: возврат причины фейла на клиент
     public static ProcessingResult authRequestHandle(AuthRequest authRequest) {
         if (checkCredentials(authRequest.getLogin(), authRequest.getPassword())) {
             Path newCurrentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY).resolve(authRequest.getLogin());
