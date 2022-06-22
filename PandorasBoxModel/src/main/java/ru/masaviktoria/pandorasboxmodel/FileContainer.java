@@ -5,8 +5,11 @@ import lombok.Data;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.apache.commons.io.FilenameUtils;
 
+//todo: класс частично дублирует функционал FileListMappingInfo. Отличие в том, что здесь байты файла. Избавиться от дублирования
 @Data
 public class FileContainer implements BoxCommand {
     private final long fileSize;
@@ -17,9 +20,9 @@ public class FileContainer implements BoxCommand {
     private String fileServerPath;
     private String fileSharingLink;
     private String fileOwner;
-//todo: не хватает поля fileLastModified
+    private LocalDateTime lastModified;
 
-// todo: возможно, enum не понадобится
+
     public enum FileOrDirectory {
         FILE("F"), DIRECTORY("D");
         private String name;
@@ -34,8 +37,9 @@ public class FileContainer implements BoxCommand {
     }
 
     public FileContainer(Path path) throws IOException {
-        fileData = Files.readAllBytes(path);
-        fileName = path.getFileName().toString();
+        this.fileData = Files.readAllBytes(path);
+        this.fileName = path.getFileName().toString();
+        this.lastModified = LocalDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneOffset.ofHours(3));
         if (Files.isDirectory(path)) {
             this.fileOrDirectory = FileOrDirectory.DIRECTORY;
             this.fileSize = -1;
