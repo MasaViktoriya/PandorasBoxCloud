@@ -39,14 +39,16 @@ public class BoxCommandHandler extends SimpleChannelInboundHandler<BoxCommand> {
             } else if (boxCommand instanceof  NewFolderRequest newFolderRequest) {
                 processingResult = UIService.newFolderHandle(newFolderRequest, currentDir);
             } else if (boxCommand instanceof  RenameRequest renameRequest){
-                processingResult = UIService.renameFileOrDirectory(renameRequest, currentDir);
+                processingResult = FileHandlingService.renameFileOrDirectory(renameRequest, currentDir);
             } else if (boxCommand instanceof  DeleteRequest deleteRequest){
-                processingResult = UIService.deleteFileOrDirectory(deleteRequest, currentDir);
+                processingResult = FileHandlingService.deleteFileOrDirectory(deleteRequest, currentDir);
             }
             updateUserState(processingResult);
             ctx.writeAndFlush(processingResult.getCommand());
             if(processingResult.getCommand() instanceof AuthOK){
                 ctx.writeAndFlush(new FileList(processingResult.getNewCurrentDir()));
+            } else if (processingResult.getCommand() instanceof  DeleteFailed || processingResult.getCommand() instanceof RenameFailed){
+                ctx.writeAndFlush(new FileList(currentDir));
             }
         } catch (Exception e) {
             System.out.println("Runtime exception occurred");
