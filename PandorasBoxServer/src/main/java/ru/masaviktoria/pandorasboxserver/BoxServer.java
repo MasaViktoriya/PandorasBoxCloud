@@ -11,7 +11,6 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.extern.slf4j.Slf4j;
-import ru.masaviktoria.pandorasboxmodel.CommandsAndConstants;
 
 @Slf4j
 public class BoxServer {
@@ -26,7 +25,7 @@ public class BoxServer {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        protected void initChannel(SocketChannel socketChannel) {
                             socketChannel.pipeline().addLast(
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
@@ -34,7 +33,7 @@ public class BoxServer {
                             );
                         }
                     });
-            ChannelFuture future = server.bind(CommandsAndConstants.PORT).sync();
+            ChannelFuture future = server.bind(ServerConstants.PORT).sync();
             log.debug("Server is ready");
             future.channel().closeFuture().sync();
         } catch (Exception e) {

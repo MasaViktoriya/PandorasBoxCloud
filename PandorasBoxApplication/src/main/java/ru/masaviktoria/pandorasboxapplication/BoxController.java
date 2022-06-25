@@ -3,8 +3,6 @@ package ru.masaviktoria.pandorasboxapplication;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -20,18 +18,11 @@ import org.apache.commons.io.FilenameUtils;
 import ru.masaviktoria.pandorasboxmodel.*;
 
 import java.io.*;
-import java.net.SocketException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.regex.Pattern;
-import java.awt.Desktop;
-import java.util.stream.Stream;
 
-public class BoxController implements Initializable {
+public class BoxController implements Initializable, CallBackInterface {
 
     @FXML
     public VBox vBox;
@@ -88,6 +79,8 @@ public class BoxController implements Initializable {
     @FXML
     public TableColumn<FileListMappingInfo, Long> localFileSizeColumn;
     @FXML
+    public TableColumn<FileListMappingInfo, String> localLastModifiedColumn;
+    @FXML
     public TableView<FileListMappingInfo> serverFilesTable;
     @FXML
     public TableColumn<FileListMappingInfo, ImageView> serverTypeColumn;
@@ -95,8 +88,6 @@ public class BoxController implements Initializable {
     public TableColumn<FileListMappingInfo, String> serverFileOrDirectoryNameColumn;
     @FXML
     public TableColumn<FileListMappingInfo, Long> serverFileSizeColumn;
-    @FXML
-    public TableColumn<FileListMappingInfo, String> localLastModifiedColumn;
     @FXML
     public TableColumn<FileListMappingInfo, String> serverLastModifiedColumn;
     @FXML
@@ -116,151 +107,127 @@ public class BoxController implements Initializable {
     @FXML
     public Button sharingLinkButton;
 
-    private Network network;
-    private String dir;
+    public String dir;
     private boolean isAuthorized = false;
+    private NetworkService networkService;
+    private FileService fileService;
+
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        this.dir = CommandsAndConstants.LOCALROOTDIRECTORY;
+        this.dir = ClientConstants.LOCALROOTDIRECTORY;
+        this.networkService = new NetworkService();
+        this.fileService = new FileService();
         startLocalNavigation();
-        networkConnection();
-        startServerCommunication();
+        startServerNavigation();
+        listenToCallbacks();
     }
 
-    private void networkConnection() {
-        try {
-            network = new Network(CommandsAndConstants.PORT);
-        } catch (IOException e) {
-            System.out.println("Connection failed");
-            connectionAlert();
-            e.printStackTrace();
+    private void listenToCallbacks() {
+        Thread listenToCallbacksThread = new Thread(() -> networkService.readCommandsFromServer(BoxController.this));
+        listenToCallbacksThread.setDaemon(true);
+        listenToCallbacksThread.start();
+    }
+
+    @Override
+    public void handleCallbacks(BoxCommand boxCommand) {
+        if (boxCommand instanceof AuthOK authOK) {
+            authorizationProceed(authOK);
+        } else if (boxCommand instanceof AuthFailed) {
+            authorizationFailed();
+        } else if (boxCommand instanceof RegistrationFailed) {
+            registrationFailed();
+        } else if (boxCommand instanceof FileList fileList) {
+            showServerFiles(fileList);
+        } else if (boxCommand instanceof LogoutOK) {
+            logoutProceed();
+        } else if (boxCommand instanceof FileContainer fileContainer) {
+            downloadFileProceed(fileContainer);
+        } else if (boxCommand instanceof NewDirectoryFailed) {
+            newDirectoryFailed();
+        } else if (boxCommand instanceof RenameFailed) {
+            renameFailed();
+        } else if (boxCommand instanceof DeleteFailed) {
+            deleteFailed();
         }
     }
 
-    private void connectionAlert() {
-        Platform.runLater(() -> {
-            Alert connectionAlert = new Alert(Alert.AlertType.ERROR);
-            connectionAlert.setTitle("Connection failed");
-            connectionAlert.setHeaderText("Server is disconnected");
-            connectionAlert.setContentText("Check your internet connection and reload app");
-            connectionAlert.showAndWait();
-        });
-    }
-
     private void startLocalNavigation() {
-        Thread localFilesListThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                createLocalFilesTable();
-                showLocalFiles();
-            }
+        Thread localFilesListThread = new Thread(() -> {
+            createLocalFilesTable();
+            showLocalFiles();
         });
         localFilesListThread.setDaemon(true);
         localFilesListThread.start();
     }
 
-    private void startServerCommunication() {
+    private void startServerNavigation() {
         Thread serverFilesListThread = new Thread(this::createServerFilesTable);
         serverFilesListThread.setDaemon(true);
         serverFilesListThread.start();
-        Thread readServerCommandsThread = new Thread(this::readCommandsFromServer);
-        readServerCommandsThread.setDaemon(true);
-        readServerCommandsThread.start();
+    }
+
+    private void createFilesTable(TableView<FileListMappingInfo> table, TableColumn<FileListMappingInfo, ImageView> type, TableColumn<FileListMappingInfo, String> name, TableColumn<FileListMappingInfo, Long> size, TableColumn<FileListMappingInfo, String> lastModified){
+        Platform.runLater(() -> {
+            type.setCellValueFactory(param -> {
+                String typeName = param.getValue().getFileType().getName();
+                if (!typeName.isEmpty()) {
+                    return new SimpleObjectProperty<>(new ImageView(new Image(Objects.requireNonNull(getClass().getResourceAsStream("foldericon.png")))));
+                } else {
+                    return new SimpleObjectProperty<>(new ImageView(new Image(Objects.requireNonNull(getClass().getResourceAsStream("fileicon.jpg")))));
+                }
+            });
+            name.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getFileName()));
+            size.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getFileSize()));
+            size.setCellFactory(column -> {
+                return new TableCell<>() {
+                    @Override
+                    protected void updateItem(Long item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item == null || empty) {
+                            setText(null);
+                            setStyle("");
+                        } else {
+                            String text = String.format("%,d bytes", item);
+                            if (item == -1) {
+                                text = "";
+                            }
+                            setText(text);
+                        }
+                    }
+                };
+            });
+            lastModified.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getLastModified().format(ClientConstants.DTF)));
+            table.getSortOrder().add(size);
+        });
     }
 
     private void createLocalFilesTable() {
-        Platform.runLater(() -> {
-            localTypeColumn.setCellValueFactory(param -> {
-                String type = param.getValue().getFileType().getName();
-                if (!type.isEmpty()) {
-                    return new SimpleObjectProperty<ImageView>(new ImageView(new Image(getClass().getResourceAsStream("foldericon.png"))));
-                } else {
-                    return new SimpleObjectProperty<ImageView>(new ImageView(new Image(getClass().getResourceAsStream("fileicon.jpg"))));
-                }
-            });
-            localFileOrDirectoryNameColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getFileName()));
-            localFileSizeColumn.setCellValueFactory(param -> new SimpleObjectProperty<Long>(param.getValue().getFileSize()));
-            localFileSizeColumn.setCellFactory(column -> {
-                return new TableCell<FileListMappingInfo, Long>() {
-                    @Override
-                    protected void updateItem(Long item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setStyle("");
-                        } else {
-                            String text = String.format("%,d bytes", item);
-                            if (item == -1) {
-                                text = "";
-                            }
-                            setText(text);
-                        }
-                    }
-                };
-            });
-            localLastModifiedColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getLastModified().format(CommandsAndConstants.DTF)));
-            localFilesTable.getSortOrder().add(localFileSizeColumn);
-        });
+        createFilesTable(localFilesTable, localTypeColumn, localFileOrDirectoryNameColumn, localFileSizeColumn, localLastModifiedColumn);
     }
 
     private void createServerFilesTable() {
-        Platform.runLater(() -> {
-            serverTypeColumn.setCellValueFactory(param -> {
-                String type = param.getValue().getFileType().getName();
-                if (!type.isEmpty()) {
-                    return new SimpleObjectProperty<ImageView>(new ImageView(new Image(getClass().getResourceAsStream("foldericon.png"))));
-                } else {
-                    return new SimpleObjectProperty<ImageView>(new ImageView(new Image(getClass().getResourceAsStream("fileicon.jpg"))));
-                }
-            });
-            serverFileOrDirectoryNameColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getFileName()));
-            serverFileSizeColumn.setCellValueFactory(param -> new SimpleObjectProperty<Long>(param.getValue().getFileSize()));
-            serverFileSizeColumn.setCellFactory(column -> {
-                return new TableCell<FileListMappingInfo, Long>() {
-                    @Override
-                    protected void updateItem(Long item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setStyle("");
-                        } else {
-                            String text = String.format("%,d bytes", item);
-                            if (item == -1) {
-                                text = "";
-                            }
-                            setText(text);
-                        }
-                    }
-                };
-            });
-            serverLastModifiedColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getLastModified().format(CommandsAndConstants.DTF)));
-            serverFilesTable.getSortOrder().add(serverFileSizeColumn);
-        });
+        createFilesTable(serverFilesTable, serverTypeColumn, serverFileOrDirectoryNameColumn, serverFileSizeColumn, serverLastModifiedColumn);
     }
 
     @FXML
     private void showLocalFiles() {
         Platform.runLater(() -> {
-            try {
-                localCurrentFolderTextField.setText("Current: " + Path.of(dir).normalize().toAbsolutePath());
+                localCurrentFolderTextField.setText("Current: " + fileService.getCurrentDirectory(dir));
                 localFilesTable.getItems().clear();
-                List<FileListMappingInfo> fileList = Files.list(Path.of(dir))
-                        .map(FileListMappingInfo::new)
-                        .filter(FileListMappingInfo::isNotSystem)
-                        .filter(FileListMappingInfo::isNotHidden)
-                        .toList();
-                localFilesTable.getItems().addAll(fileList);
+                try {
+                localFilesTable.getItems().addAll(fileService.getFileList(dir));
+                } catch (IOException e) {
+                    System.out.println("File listing error");
+                    e.printStackTrace();
+                }
                 localFilesTable.sort();
                 localFilesTable.scrollTo(0);
-            } catch (IOException e) {
-                System.out.println("File listing error");
-                e.printStackTrace();
-            }
         });
     }
 
-    private void showServerFiles(FileList fileList) {
+    void showServerFiles(FileList fileList) {
         Platform.runLater(() -> {
             String currentDir = fileList.getCurrentDir().substring(13);
             serverCurrentFolderTextField.setText("Current: " + currentDir);
@@ -271,38 +238,6 @@ public class BoxController implements Initializable {
         });
     }
 
-    private void readCommandsFromServer() {
-        try {
-            while (true) {
-                BoxCommand boxCommand = network.read();
-                if (boxCommand instanceof AuthOK authOK) {
-                    authorizationProceed(authOK);
-                } else if (boxCommand instanceof AuthFailed) {
-                    authorizationFailed();
-                } else if (boxCommand instanceof RegistrationFailed) {
-                    registrationFailed();
-                } else if (boxCommand instanceof FileList fileList) {
-                    showServerFiles(fileList);
-                } else if (boxCommand instanceof LogoutOK) {
-                    logoutProceed();
-                } else if (boxCommand instanceof FileContainer fileContainer) {
-                    saveFileFromContainer(fileContainer);
-                } else if (boxCommand instanceof NewFolderFailed) {
-                    newFolderCreationFailedAlert();
-                } else if (boxCommand instanceof RenameFailed) {
-                    renameFailedAlert();
-                } else if (boxCommand instanceof DeleteFailed) {
-                    noSuchFileAlert();
-                }
-            }
-        } catch (SocketException s) {
-            System.out.println("Server was disconnected");
-            connectionAlert();
-        } catch (Exception e) {
-            System.out.println("Reading error");
-            e.printStackTrace();
-        }
-    }
 
     @FXML
     private void goToPasswordByTabOrEnter(KeyEvent keyEvent) {
@@ -316,17 +251,17 @@ public class BoxController implements Initializable {
     }
 
     @FXML
-    private void proceedAuthByButton(Event mouseEvent) {
-        authorizationRequest();
+    private void startAuthenticationByButton() {
+        authenticationRequest(ClientConstants.AUTHORIZE);
     }
 
     @FXML
-    private void proceedAuthByEnter(KeyEvent keyEvent) {
+    private void startAuthenticationByEnter(KeyEvent keyEvent) {
         if (keyEvent.getCode() == KeyCode.ENTER) {
             if (!returnToLoginLabel.isVisible()) {
-                authorizationRequest();
+                authenticationRequest(ClientConstants.AUTHORIZE);
             } else {
-                registrationRequest();
+                authenticationRequest(ClientConstants.REGISTER);
             }
         }
     }
@@ -339,9 +274,7 @@ public class BoxController implements Initializable {
         passwordVisibleField.setVisible(true);
         passwordVisibleField.setText(pass);
         showPasswordLabel.setText("Hide password");
-        showPasswordLabel.setOnMouseClicked((EventHandler) -> {
-            hidePassword();
-        });
+        showPasswordLabel.setOnMouseClicked((EventHandler) -> hidePassword());
     }
 
     private void hidePassword() {
@@ -352,34 +285,33 @@ public class BoxController implements Initializable {
             passwordField.setVisible(true);
             passwordField.setText(pass);
             showPasswordLabel.setText("Show password");
-            showPasswordLabel.setOnMouseClicked((EventHandler) -> {
-                showPassword();
-            });
+            showPasswordLabel.setOnMouseClicked((EventHandler) -> showPassword());
         });
     }
 
-    private void authorizationRequest() {
-        if (!passwordField.getText().isEmpty()) {
-            if (Pattern.matches("^[\\w\\.\\-]{1,20}$", loginField.getText()) && Pattern.matches("^[\\w\\.\\-]{1,20}$", passwordField.getText())) {
-                try {
-                    network.write(new AuthRequest(loginField.getText(), passwordField.getText()));
-                } catch (IOException e) {
-                    System.out.println("Authentication request failed");
-                    e.printStackTrace();
+    private void authenticationRequest(String type) {
+        String login = loginField.getText();
+        String password = passwordField.getText();
+        String passwordVisible = passwordVisibleField.getText();
+        if (!password.isEmpty()) {
+            if (RegExMatchers.credentialsMatcher(login) && RegExMatchers.credentialsMatcher(password)) {
+                if (type.equals(ClientConstants.AUTHORIZE)) {
+                    networkService.sendAuthRequest(login, password);
+                } else {
+                    networkService.sendRegistrationRequest(login, password);
                 }
             } else {
-                wrongCredentialsFormatAlert();
+                Alerts.wrongCredentialsFormatAlert();
             }
         } else {
-            if (Pattern.matches("^[\\w\\.\\-]{1,20}$", loginField.getText()) && Pattern.matches("^[\\w\\.\\-]{1,20}$", passwordVisibleField.getText())) {
-                try {
-                    network.write(new AuthRequest(loginField.getText(), passwordVisibleField.getText()));
-                } catch (IOException e) {
-                    System.out.println("Authentication request failed");
-                    e.printStackTrace();
+            if (RegExMatchers.credentialsMatcher(login) && RegExMatchers.credentialsMatcher(passwordVisible)) {
+                if (type.equals(ClientConstants.AUTHORIZE)) {
+                    networkService.sendAuthRequest(login, passwordVisible);
+                } else {
+                    networkService.sendRegistrationRequest(login, passwordVisible);
                 }
             } else {
-                wrongCredentialsFormatAlert();
+                Alerts.wrongCredentialsFormatAlert();
             }
         }
     }
@@ -393,61 +325,21 @@ public class BoxController implements Initializable {
             regLabel.setDisable(true);
             returnToLoginLabel.setVisible(true);
             wrongCredentialsLabel.setVisible(false);
-            loginButton.setOnMouseClicked((EventHandler) -> {
-                registrationRequest();
-            });
+            loginButton.setOnMouseClicked((EventHandler) -> authenticationRequest(ClientConstants.REGISTER));
         });
-    }
-
-    private void registrationRequest() {
-        if (!passwordField.getText().isEmpty()) {
-            if (Pattern.matches("^[\\w\\.\\-]{1,20}$", loginField.getText()) && Pattern.matches("^[\\w\\.\\-]{1,20}$", passwordField.getText())) {
-                try {
-                    network.write(new RegistrationRequest(loginField.getText(), passwordField.getText()));
-                } catch (IOException e) {
-                    System.out.println("Registration request failed");
-                    e.printStackTrace();
-                }
-            } else {
-                wrongCredentialsLabel.setVisible(true);
-                wrongCredentialsFormatAlert();
-            }
-        } else {
-            if (Pattern.matches("^[\\w\\.\\-]{1,20}$", loginField.getText()) && Pattern.matches("^[\\w\\.\\-]{1,20}$", passwordVisibleField.getText())) {
-                try {
-                    network.write(new RegistrationRequest(loginField.getText(), passwordVisibleField.getText()));
-                } catch (IOException e) {
-                    System.out.println("Registration request failed");
-                    e.printStackTrace();
-                }
-            } else {
-                wrongCredentialsLabel.setVisible(true);
-                wrongCredentialsFormatAlert();
-            }
-        }
     }
 
     @FXML
     private void returnToLogin() {
         returnToLoginLabel.setVisible(false);
         loginButton.setText("Log in");
-        loginButton.setOnMouseClicked((EventHandler) this::proceedAuthByButton);
+        loginButton.setOnMouseClicked((EventHandler) -> authenticationRequest(ClientConstants.AUTHORIZE));
         regLabel.setText("Create account");
         regLabel.setDisable(false);
         wrongCredentialsLabel.setVisible(false);
     }
 
-    private void wrongCredentialsFormatAlert() {
-        Platform.runLater(() -> {
-            Alert wrongFormatAlert = new Alert(Alert.AlertType.ERROR);
-            wrongFormatAlert.setTitle("Input Error");
-            wrongFormatAlert.setHeaderText("Wrong format");
-            wrongFormatAlert.setContentText("Please, use only: \na-Z \n0-9 \n_ . -");
-            wrongFormatAlert.showAndWait();
-        });
-    }
-
-    private void authorizationProceed(AuthOK authOK) {
+    void authorizationProceed(AuthOK authOK) {
         Platform.runLater(() -> {
             isAuthorized = true;
             loginLabel.setVisible(true);
@@ -459,62 +351,33 @@ public class BoxController implements Initializable {
             showPasswordLabel.setVisible(false);
             regLabel.setVisible(false);
             returnToLoginLabel.setVisible(false);
-            loginButton.setOnMouseClicked((EventHandler) event -> logoutRequest());
+            loginButton.setOnMouseClicked((EventHandler) -> networkService.sendLogoutRequest());
             loginButton.setText("Log out");
         });
         System.out.println("Authorization successful");
     }
 
-    private void authorizationFailed() {
+    void authorizationFailed() {
         Platform.runLater(() -> {
             wrongCredentialsLabel.setVisible(true);
-            wrongCredentialsAlert();
+            Alerts.wrongCredentialsAlert();
             loginField.clear();
             passwordField.clear();
             passwordVisibleField.clear();
         });
     }
 
-    private void wrongCredentialsAlert() {
-        Platform.runLater(() -> {
-            Alert wrongCredentialsAlert = new Alert(Alert.AlertType.ERROR);
-            wrongCredentialsAlert.setTitle("Authorization failed");
-            wrongCredentialsAlert.setHeaderText("Wrong login or password");
-            wrongCredentialsAlert.setContentText("Please, try again. Use only a-Z 0-9 . _");
-            wrongCredentialsAlert.showAndWait();
-        });
-    }
-
-    private void registrationFailed() {
+    void registrationFailed() {
         Platform.runLater(() -> {
             wrongCredentialsLabel.setVisible(true);
-            loginAlreadyExistsAlert();
+            Alerts.loginAlreadyExistsAlert();
             loginField.clear();
             passwordField.clear();
             passwordVisibleField.clear();
         });
     }
 
-    private void loginAlreadyExistsAlert() {
-        Platform.runLater(() -> {
-            Alert loginAlreadyExistsAlert = new Alert(Alert.AlertType.ERROR);
-            loginAlreadyExistsAlert.setTitle("Registration failed");
-            loginAlreadyExistsAlert.setHeaderText("This login already exists");
-            loginAlreadyExistsAlert.setContentText("Please, create another account or log in.\nUse only a-Z 0-9 . _");
-            loginAlreadyExistsAlert.showAndWait();
-        });
-    }
-
-    private void logoutRequest() {
-        try {
-            network.write(new LogoutRequest());
-        } catch (IOException e) {
-            System.out.println("Logout request failed");
-            e.printStackTrace();
-        }
-    }
-
-    private void logoutProceed() {
+    void logoutProceed() {
         Platform.runLater(() -> {
             isAuthorized = false;
             serverFilesTable.getItems().clear();
@@ -529,11 +392,9 @@ public class BoxController implements Initializable {
             passwordVisibleField.setVisible(false);
             showPasswordLabel.setVisible(true);
             showPasswordLabel.setText("Make visible");
-            showPasswordLabel.setOnMouseClicked((EventHandler) -> {
-                showPassword();
-            });
+            showPasswordLabel.setOnMouseClicked((EventHandler) -> showPassword());
             loginButton.setText("Log in");
-            loginButton.setOnMouseClicked((EventHandler) this::proceedAuthByButton);
+            loginButton.setOnMouseClicked((EventHandler) -> authenticationRequest(ClientConstants.AUTHORIZE));
             regLabel.setText("Create account");
             regLabel.setDisable(false);
             regLabel.setVisible(true);
@@ -545,15 +406,14 @@ public class BoxController implements Initializable {
 
     //todo: процесс загрузки файла - отображение
     @FXML
-    private void uploadFile() {
+    private void uploadFileRequest() {
         if (isAuthorized) {
             if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
+                String selectedFile = localFilesTable.getSelectionModel().getSelectedItem().getFileName();
                 try {
-                    String selectedFile = localFilesTable.getSelectionModel().getSelectedItem().getFileName();
-                    network.write(new FileContainer(Path.of(dir).resolve(selectedFile)));
-                    System.out.println("Upload successful");
+                    networkService.sendFileContainer(fileService.uploadFile(selectedFile, dir));
                 } catch (IOException e) {
-                    System.out.println("Upload unsuccessful");
+                    System.out.println("Upload error");
                     e.printStackTrace();
                 }
             }
@@ -562,52 +422,38 @@ public class BoxController implements Initializable {
 
     //todo: процесс загрузки файла - отображение
     @FXML
-    private void downloadFile() {
+    private void downloadFileRequest() {
         if (isAuthorized) {
             if (serverFilesTable.getSelectionModel().getSelectedItem() != null) {
-                try {
-                    String selectedFile = serverFilesTable.getSelectionModel().getSelectedItem().getFileName();
-                    System.out.println("Download started: " + selectedFile);
-                    network.write(new FileRequest(selectedFile));
-                } catch (IOException e) {
-                    System.out.println("File was not accepted");
-                    e.printStackTrace();
-                }
+                String selectedFile = serverFilesTable.getSelectionModel().getSelectedItem().getFileName();
+                networkService.sendFileRequest(selectedFile);
             }
         }
     }
 
-    private void saveFileFromContainer(FileContainer fileContainer) {
-        try {
-            Path current = Path.of(dir).resolve(fileContainer.getFileName());
-            Files.write(current, fileContainer.getFileData());
-            System.out.println("Received file: " + fileContainer.getFileName());
-            showLocalFiles();
-        } catch (IOException e) {
-            System.out.println("File saving unsuccessful");
-            e.printStackTrace();
-        }
+    private void downloadFileProceed(FileContainer fileContainer) {
+        fileService.saveFileFromContainer(fileContainer, dir);
+        showLocalFiles();
     }
 
     @FXML
     private void goUpLocally() {
-        if (!dir.equals(CommandsAndConstants.LOCALROOTDIRECTORY)) {
-            this.dir = Path.of(dir).getParent().toString();
+        String parentDir = fileService.getParentDirIfPossible(dir);
+        if(!parentDir.isEmpty()){
+            this.dir = parentDir;
             showLocalFiles();
-            selectedFilePath.clear();
-        } else {
-            showLocalFiles();
-            selectedFilePath.clear();
         }
+        selectedFilePath.clear();
     }
 
     @FXML
-    private void checkLocalDirectory(MouseEvent mouseEvent) {
+    private void getIntoLocalDirectory(MouseEvent mouseEvent) {
         if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 2) {
             if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
-                Path selectedPath = Path.of(dir).resolve(localFilesTable.getSelectionModel().getSelectedItem().getFileName());
-                if (Files.isDirectory(selectedPath)) {
-                    this.dir = selectedPath.toString();
+                String selectedItem = localFilesTable.getSelectionModel().getSelectedItem().getFileName();
+                String checkDir = fileService.checkLocalDirectory(selectedItem, dir);
+                if(!checkDir.isEmpty()){
+                    this.dir = checkDir;
                     showLocalFiles();
                     selectedFilePath.clear();
                 }
@@ -618,10 +464,9 @@ public class BoxController implements Initializable {
     @FXML
     private void showSelectedFilePath() {
         if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
-            Path selectedPath = Path.of(dir).resolve(localFilesTable.getSelectionModel().getSelectedItem().getFileName()).toAbsolutePath().normalize();
-            if (!Files.isDirectory(selectedPath)) {
-                selectedFilePath.setText(String.valueOf(selectedPath));
-            }
+            String selectedFile = localFilesTable.getSelectionModel().getSelectedItem().getFileName();
+            String path = fileService.getSelectedFilePath(selectedFile, dir);
+            selectedFilePath.setText(path);
         }
     }
 
@@ -630,234 +475,132 @@ public class BoxController implements Initializable {
     @FXML
     private void goUpOnServer() {
         if (isAuthorized) {
-            try {
-                network.write(new PathUpRequest());
-            } catch (IOException e) {
-                System.out.println("Server navigation error");
-                e.printStackTrace();
-            }
+            networkService.sendPathUpRequest();
         }
     }
 
     @FXML
-    private void checkServerDirectory(MouseEvent mouseEvent) {
+    private void getIntoServerDirectoryRequest(MouseEvent mouseEvent) {
         if (isAuthorized) {
             if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 2) {
                 if (serverFilesTable.getSelectionModel().getSelectedItem() != null) {
                     String selectedFile = serverFilesTable.getSelectionModel().getSelectedItem().getFileName();
-                    try {
-                        network.write(new PathInRequest(selectedFile));
-                    } catch (IOException e) {
-                        System.out.println("Server navigation error");
-                        e.printStackTrace();
-                    }
+                    networkService.sendPathInRequest(selectedFile);
                 }
             }
         }
     }
 
+
+    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
-    private void createNewLocalDirectory() {
-        TextInputDialog newDirectoryNameDialog = new TextInputDialog("NewFolder");
-        newDirectoryNameDialog.setTitle("Create new local folder");
-        newDirectoryNameDialog.setHeaderText("Folder name:");
-        newDirectoryNameDialog.setContentText("-->");
-        Optional<String> result = newDirectoryNameDialog.showAndWait();
-        if (result.isPresent()) {
-            String newDirectoryName = result.get();
-            if (Pattern.matches("^[\\p{L}\\p{N}\\s_.-]{1,255}$", newDirectoryName)) {
-                if (!Files.exists(Path.of(dir).resolve(newDirectoryName))) {
-                    try {
-                        Files.createDirectory(Path.of(dir).resolve(newDirectoryName));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("User created a new local folder: " + newDirectoryName);
-                    showLocalFiles();
+    private void createNewLocalDirectoryRequest() {
+        String newDirectoryName = Prompts.createNewDirectoryPrompt(ClientConstants.LOCAL);
+        if (!newDirectoryName.isEmpty()) {
+            if (RegExMatchers.nameMatcher(newDirectoryName)) {
+                if (!fileService.createNewLocalDirectory(newDirectoryName, dir)) {
+                    Alerts.newFolderCreationFailedAlert();
                 } else {
-                    newFolderCreationFailedAlert();
+                    showLocalFiles();
                 }
             } else {
-                wrongFileOrDirectoryNameFormatAlert();
+                Alerts.wrongFileOrDirectoryNameFormatAlert();
             }
         }
     }
 
+    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
-    private void createNewServerDirectory() {
+    private void createNewServerDirectoryRequest() {
         if (isAuthorized) {
-            TextInputDialog newDirectoryNameDialog = new TextInputDialog("NewFolder");
-            newDirectoryNameDialog.setTitle("Create new server folder");
-            newDirectoryNameDialog.setHeaderText("Folder name:");
-            newDirectoryNameDialog.setContentText("-->");
-            Optional<String> result = newDirectoryNameDialog.showAndWait();
-            if (result.isPresent()) {
-                String newDirectoryName = result.get();
-                if (Pattern.matches("^[\\p{L}\\p{N}\\s_.-]{1,255}$", newDirectoryName)) {
-                    try {
-                        network.write(new NewFolderRequest(newDirectoryName));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("User created a new server folder: " + newDirectoryName);
+            String newDirectoryName = Prompts.createNewDirectoryPrompt(ClientConstants.SERVER);
+            if (!newDirectoryName.isEmpty()) {
+                if (RegExMatchers.nameMatcher(newDirectoryName)) {
+                    networkService.sendNewDirectoryRequest(newDirectoryName);
                 } else {
-                    wrongFileOrDirectoryNameFormatAlert();
+                    Alerts.wrongFileOrDirectoryNameFormatAlert();
                 }
             }
         }
     }
 
-    private void newFolderCreationFailedAlert() {
-        Platform.runLater(() -> {
-            Alert newFolderCreationFailed = new Alert(Alert.AlertType.ERROR);
-            newFolderCreationFailed.setTitle("New folder was not created");
-            newFolderCreationFailed.setHeaderText("The folder with this name already exists");
-            newFolderCreationFailed.setContentText("");
-            newFolderCreationFailed.showAndWait();
-        });
+    protected void newDirectoryFailed() {
+        Platform.runLater(Alerts::newFolderCreationFailedAlert);
     }
 
-    private void wrongFileOrDirectoryNameFormatAlert() {
-        Platform.runLater(() -> {
-            Alert wrongFormatAlert = new Alert(Alert.AlertType.ERROR);
-            wrongFormatAlert.setTitle("Input Error");
-            wrongFormatAlert.setHeaderText("Wrong format");
-            wrongFormatAlert.setContentText("Please, use: \nany letters \nany numbers \n_  . - and space");
-            wrongFormatAlert.showAndWait();
-        });
-    }
-
-    //todo: UID для файлов, запись в базу, переименование и удаление на сервере через UID
+    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
-    private void renameSelectedLocalFileOrDirectory() {
+    private void renameSelectedLocalFileOrDirectoryRequest() {
         if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
-            String oldName = dir + "/" + localFilesTable.getSelectionModel().getSelectedItem().getFileName();
-            TextInputDialog renameDialog = new TextInputDialog("NewName");
-            renameDialog.setTitle("Rename File or Directory");
-            renameDialog.setHeaderText("New name:");
-            renameDialog.setContentText("-->");
-            Optional<String> result = renameDialog.showAndWait();
-            if (result.isPresent()) {
-                String newName = result.get();
-                if (Pattern.matches("^[\\p{L}\\p{N}\\s_.-]{1,255}$", newName)) {
-                    newName = dir + "/" + newName + "." + FilenameUtils.getExtension(oldName);
-                    if (!Files.exists(Path.of(newName))) {
-                        Path source = Path.of(oldName);
-                        try {
-                            Files.move(source, source.resolveSibling(newName));
-                            showLocalFiles();
-                        } catch (IOException e) {
-                            System.out.println("File rename failed");
-                            e.printStackTrace();
-                        }
+            String oldName = localFilesTable.getSelectionModel().getSelectedItem().getFileName();
+            String newName = Prompts.renameDirectoryPrompt();
+            if (!newName.isEmpty()) {
+                if (RegExMatchers.nameMatcher(newName)) {
+                    if (fileService.renameLocalFileOrDirectory(newName, oldName, dir)) {
+                        showLocalFiles();
                     } else {
-                        renameFailedAlert();
+                        Alerts.renameFailedAlert();
                     }
                 } else {
-                    wrongFileOrDirectoryNameFormatAlert();
+                    Alerts.wrongFileOrDirectoryNameFormatAlert();
                 }
             }
         }
     }
 
+    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
-    private void renameSelectedServerFileOrDirectory() {
+    private void renameSelectedServerFileOrDirectoryRequest() {
         if (isAuthorized) {
             if (serverFilesTable.getSelectionModel().getSelectedItem() != null) {
                 String oldName = serverFilesTable.getSelectionModel().getSelectedItem().getFileName();
-                TextInputDialog renameDialog = new TextInputDialog("NewName");
-                renameDialog.setTitle("Rename File or Directory");
-                renameDialog.setHeaderText("New name:");
-                renameDialog.setContentText("-->");
-                Optional<String> result = renameDialog.showAndWait();
-                if (result.isPresent()) {
-                    String newName = result.get();
-                    if (Pattern.matches("^[\\p{L}\\p{N}\\s_.-]{1,255}$", newName)) {
+                String newName = Prompts.renameDirectoryPrompt();
+                if (!newName.isEmpty()) {
+                    if (RegExMatchers.nameMatcher(newName)) {
                         newName = newName + "." + FilenameUtils.getExtension(oldName);
-                        try {
-                            network.write(new RenameRequest(oldName, newName));
-                        } catch (IOException e) {
-                            System.out.println("Rename failed");
-                            e.printStackTrace();
-                        }
+                        networkService.sendRenameRequest(oldName, newName);
                     } else {
-                        wrongFileOrDirectoryNameFormatAlert();
+                        Alerts.wrongFileOrDirectoryNameFormatAlert();
                     }
                 }
             }
         }
     }
 
-    private void renameFailedAlert() {
-        Platform.runLater(() -> {
-            Alert renameFailed = new Alert(Alert.AlertType.ERROR);
-            renameFailed.setTitle("Rename failed");
-            renameFailed.setHeaderText("The file or folder with this name already exists");
-            renameFailed.setContentText("");
-            renameFailed.showAndWait();
-        });
+    protected void renameFailed() {
+        Platform.runLater(Alerts::renameFailedAlert);
     }
 
+    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
-    private void deleteSelectedLocalFileOrDirectory() {
+    private void deleteSelectedLocalFileOrDirectoryRequest() {
         if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
-            String itemToDelete = dir + "/" + localFilesTable.getSelectionModel().getSelectedItem().getFileName();
-            Platform.runLater(() -> {
-                Alert deletePrompt = new Alert(Alert.AlertType.CONFIRMATION);
-                deletePrompt.setTitle("You are going to delete this file");
-                deletePrompt.setHeaderText("Delete " + itemToDelete + "?");
-                deletePrompt.setContentText("");
-                ButtonType yes = new ButtonType("Delete");
-                ButtonType no = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-                deletePrompt.getButtonTypes().setAll(yes, no);
-                Optional<ButtonType> result = deletePrompt.showAndWait();
-                if (result.get() == yes) {
-                    File file = new File(itemToDelete);
-                    if (Files.exists(Path.of(itemToDelete))) {
-                        Desktop.getDesktop().moveToTrash(file);
-                        System.out.println("File " + itemToDelete + " was moved to Recycle Bin");
-                    } else {
-                        noSuchFileAlert();
-                    }
-                    showLocalFiles();
+            String itemToDelete = localFilesTable.getSelectionModel().getSelectedItem().getFileName();
+            if (Prompts.deletePrompt(itemToDelete)) {
+                if (!fileService.deleteLocalFileOrDirectory(itemToDelete, dir)) {
+                    Alerts.noSuchFileAlert();
                 }
-            });
+            }
+            showLocalFiles();
         }
     }
 
+    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
-    private void deleteSelectedServerFileOrDirectory() {
+    private void deleteSelectedServerFileOrDirectoryRequest() {
         if (isAuthorized) {
             if (serverFilesTable.getSelectionModel().getSelectedItem() != null) {
                 String itemToDelete = serverFilesTable.getSelectionModel().getSelectedItem().getFileName();
-                Platform.runLater(() -> {
-                    Alert deletePrompt = new Alert(Alert.AlertType.CONFIRMATION);
-                    deletePrompt.setTitle("You are going to delete this file");
-                    deletePrompt.setHeaderText("Delete " + itemToDelete + "?");
-                    deletePrompt.setContentText("");
-                    ButtonType yes = new ButtonType("Delete");
-                    ButtonType no = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-                    deletePrompt.getButtonTypes().setAll(yes, no);
-                    Optional<ButtonType> result = deletePrompt.showAndWait();
-                    if (result.get() == yes) {
-                        try {
-                            network.write(new DeleteRequest(itemToDelete));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+                if (Prompts.deletePrompt(itemToDelete)) {
+                    networkService.sendDeleteRequest(itemToDelete);
+                }
             }
         }
     }
 
-    private void noSuchFileAlert() {
-        Platform.runLater(() -> {
-            Alert noSuchFileAlert = new Alert(Alert.AlertType.ERROR);
-            noSuchFileAlert.setTitle("Deletion Error");
-            noSuchFileAlert.setHeaderText("The file does not exist");
-            noSuchFileAlert.setContentText("");
-            noSuchFileAlert.showAndWait();
-        });
+    protected void deleteFailed() {
+        Platform.runLater(Alerts::noSuchFileAlert);
     }
 }
+
+    //todo: UUID для файлов, запись в базу, переименование и удаление на сервере через UUID

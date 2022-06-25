@@ -18,7 +18,7 @@ public class FileHandlingService {
         return new ProcessingResult(new FileContainer(currentDir.resolve(fileRequest.getName())));
     }
 
-    //todo: UID для файлов, его запись в базу
+    //todo: UUID для файлов, его запись в базу
     //todo: sharing links
     public static ProcessingResult fileContainerHandle(FileContainer fileContainer, Path currentDir, String user) throws IOException {
         Path path = currentDir.resolve(fileContainer.getFileName());
@@ -38,7 +38,7 @@ public class FileHandlingService {
         return new ProcessingResult(new FileList(currentDir));
     }
 
-//todo:  переименование на сервере через UID
+//todo:  переименование на сервере через UUID
     public static ProcessingResult renameFileOrDirectory(RenameRequest renameRequest, Path currentDir) throws IOException{
         String newName = renameRequest.getNewName();
         if(!Files.exists(currentDir.resolve(newName))) {
@@ -52,8 +52,8 @@ public class FileHandlingService {
         }
     }
 
-    //todo: удаление на сервере через UID
-    public  static ProcessingResult deleteFileOrDirectory(DeleteRequest deleteRequest, Path currentDir) throws IOException {
+    //todo: удаление на сервере через UUID
+    public  static ProcessingResult deleteFileOrDirectory(DeleteRequest deleteRequest, Path currentDir) {
         try {
             File fileToDelete = new File(String.valueOf(currentDir.resolve(deleteRequest.getItemToDelete())));
             Desktop.getDesktop().moveToTrash(fileToDelete);
@@ -62,6 +62,16 @@ public class FileHandlingService {
         }  catch (Exception e){
             System.out.println("Deletion error");
             return new ProcessingResult(new DeleteFailed());
+        }
+    }
+
+    public static ProcessingResult newDirectoryHandle(NewDirectoryRequest newDirectoryRequest, Path currentDir) throws IOException {
+        if(!Files.exists(currentDir.resolve(newDirectoryRequest.getNewFolderName()))) {
+            Files.createDirectory(currentDir.resolve(newDirectoryRequest.getNewFolderName()));
+            System.out.println("User created a new server folder: " + newDirectoryRequest.getNewFolderName());
+            return new ProcessingResult(new FileList(currentDir));
+        }else{
+            return new ProcessingResult(new NewDirectoryFailed());
         }
     }
 }

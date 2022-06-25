@@ -5,7 +5,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import ru.masaviktoria.pandorasboxmodel.*;
 import ru.masaviktoria.pandorasboxserver.services.FileHandlingService;
 import ru.masaviktoria.pandorasboxserver.services.RegAndAuthService;
-import ru.masaviktoria.pandorasboxserver.services.UIService;
+import ru.masaviktoria.pandorasboxserver.services.NavigationService;
 
 import java.nio.file.Path;
 
@@ -15,11 +15,11 @@ public class BoxCommandHandler extends SimpleChannelInboundHandler<BoxCommand> {
     public String user;
 
     public BoxCommandHandler() {
-        currentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY);
+        currentDir = Path.of(ServerConstants.SERVERROOTDIRECTORY);
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, BoxCommand boxCommand) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, BoxCommand boxCommand) {
         try {
             ProcessingResult processingResult = new ProcessingResult();
             if (boxCommand instanceof AuthRequest authRequest) {
@@ -33,11 +33,11 @@ public class BoxCommandHandler extends SimpleChannelInboundHandler<BoxCommand> {
             } else if (boxCommand instanceof FileContainer fileContainer) {
                 processingResult = FileHandlingService.fileContainerHandle(fileContainer, currentDir, user);
             } else if (boxCommand instanceof PathUpRequest) {
-                processingResult = UIService.pathUpRequestHandle(currentDir);
+                processingResult = NavigationService.pathUpRequestHandle(currentDir);
             } else if (boxCommand instanceof PathInRequest pathInRequest) {
-                processingResult = UIService.pathInRequestHandle(pathInRequest, currentDir);
-            } else if (boxCommand instanceof  NewFolderRequest newFolderRequest) {
-                processingResult = UIService.newFolderHandle(newFolderRequest, currentDir);
+                processingResult = NavigationService.pathInRequestHandle(pathInRequest, currentDir);
+            } else if (boxCommand instanceof  NewDirectoryRequest newDirectoryRequest) {
+                processingResult = FileHandlingService.newDirectoryHandle(newDirectoryRequest, currentDir);
             } else if (boxCommand instanceof  RenameRequest renameRequest){
                 processingResult = FileHandlingService.renameFileOrDirectory(renameRequest, currentDir);
             } else if (boxCommand instanceof  DeleteRequest deleteRequest){

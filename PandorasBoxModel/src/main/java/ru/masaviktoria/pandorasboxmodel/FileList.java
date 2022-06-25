@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 public class FileList implements BoxCommand {
@@ -14,7 +13,11 @@ public class FileList implements BoxCommand {
     private String currentDir;
 
     public FileList(Path path) throws IOException {
-        this.files = Files.list(path).map(FileListMappingInfo::new).collect(Collectors.toList());
+        this.files = Files.list(path)
+                .map(FileListMappingInfo::new)
+                .filter(FileListMappingInfo::isNotSystem)
+                .filter(FileListMappingInfo::isNotHidden)
+                .toList();
         this.currentDir = path.toString();
     }
 }

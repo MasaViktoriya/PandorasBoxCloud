@@ -2,6 +2,7 @@ package ru.masaviktoria.pandorasboxserver.services;
 
 import ru.masaviktoria.pandorasboxmodel.*;
 import ru.masaviktoria.pandorasboxserver.ProcessingResult;
+import ru.masaviktoria.pandorasboxserver.ServerConstants;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,9 +16,9 @@ public class RegAndAuthService {
         if (!checkExistingUser(registrationRequest.getNewLogin())) {
             SQLService.insertToLoginsPasswords(registrationRequest.getNewLogin(), registrationRequest.getNewPassword());
             System.out.println("New user created in database");
-            Path newCurrentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY).resolve(registrationRequest.getNewLogin());
+            Path newCurrentDir = Path.of(ServerConstants.SERVERROOTDIRECTORY).resolve(registrationRequest.getNewLogin());
             Files.createDirectory(newCurrentDir);
-            System.out.println("New folder " + registrationRequest.getNewLogin() + " created in " + CommandsAndConstants.SERVERROOTDIRECTORY);
+            System.out.println("New folder " + registrationRequest.getNewLogin() + " created in " + ServerConstants.SERVERROOTDIRECTORY);
             String user = registrationRequest.getNewLogin();
             return new ProcessingResult(new AuthOK(user), newCurrentDir, user);
         } else {
@@ -43,7 +44,7 @@ public class RegAndAuthService {
 
     public static ProcessingResult authRequestHandle(AuthRequest authRequest) {
         if (checkCredentials(authRequest.getLogin(), authRequest.getPassword())) {
-            Path newCurrentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY).resolve(authRequest.getLogin());
+            Path newCurrentDir = Path.of(ServerConstants.SERVERROOTDIRECTORY).resolve(authRequest.getLogin());
             String user = authRequest.getLogin();
             System.out.println("Authorisation successful");
             return new ProcessingResult(new AuthOK(user), newCurrentDir, user);
@@ -68,9 +69,8 @@ public class RegAndAuthService {
         return false;
     }
 
-    //todo: сброс юзера в null?? а есть ли смысл
     public static ProcessingResult logoutRequestHandle() {
-        Path newCurrentDir = Path.of(CommandsAndConstants.SERVERROOTDIRECTORY);
+        Path newCurrentDir = Path.of(ServerConstants.SERVERROOTDIRECTORY);
         System.out.println("User logged out");
         return new ProcessingResult(new LogoutOK(), newCurrentDir, "");
     }

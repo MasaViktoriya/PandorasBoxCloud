@@ -3,11 +3,11 @@ package ru.masaviktoria.pandorasboxmodel;
 import lombok.Data;
 
 @Data
-public class NewFolderRequest implements BoxCommand{
+public class NewDirectoryRequest implements BoxCommand{
 
     private String newFolderName;
 
-    public NewFolderRequest(String newFolderName){
+    public NewDirectoryRequest(String newFolderName){
         this.newFolderName = newFolderName;
     }
 }

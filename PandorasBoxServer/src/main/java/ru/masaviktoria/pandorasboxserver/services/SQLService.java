@@ -49,14 +49,14 @@ public class SQLService {
     protected static void insertToFileInformation(FileListMappingInfo fileListMappingInfo, FileContainer fileContainer) {
         try {
             connect();
-            statement.executeUpdate(String.format("INSERT INTO public.\"file_information\" (file_name, file_size, file_last_modified, file_owner, file_bytes) VALUES ('%s', '%s', '%s', '%s', '%s')", fileListMappingInfo.getFileName(), fileListMappingInfo.getFileSize(), fileListMappingInfo.getLastModified(), fileListMappingInfo.getFileOwner(), (Object) fileContainer.getFileData()));
+            statement.executeUpdate(String.format("INSERT INTO public.\"file_information\" (file_name, file_size, file_last_modified, file_owner, file_bytes) VALUES ('%s', '%s', '%s', '%s', '%s')", fileListMappingInfo.getFileName(), fileListMappingInfo.getFileSize(), fileListMappingInfo.getLastModified(), fileListMappingInfo.getFileOwner(), fileContainer.getFileData()));
             disconnect();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    //todo: UID для файлов позволит использовать этот метод
+    //todo: UUID для файлов позволит использовать этот метод
     protected static void renameFile(String newName, String uid){
         try {
             connect();
