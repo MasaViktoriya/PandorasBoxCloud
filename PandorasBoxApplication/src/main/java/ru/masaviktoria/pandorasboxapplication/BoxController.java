@@ -491,8 +491,6 @@ public class BoxController implements Initializable, CallBackInterface {
         }
     }
 
-
-    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
     private void createNewLocalDirectoryRequest() {
         String newDirectoryName = Prompts.createNewDirectoryPrompt(ClientConstants.LOCAL);
@@ -509,7 +507,6 @@ public class BoxController implements Initializable, CallBackInterface {
         }
     }
 
-    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
     private void createNewServerDirectoryRequest() {
         if (isAuthorized) {
@@ -528,7 +525,6 @@ public class BoxController implements Initializable, CallBackInterface {
         Platform.runLater(Alerts::newFolderCreationFailedAlert);
     }
 
-    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
     private void renameSelectedLocalFileOrDirectoryRequest() {
         if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
@@ -548,7 +544,6 @@ public class BoxController implements Initializable, CallBackInterface {
         }
     }
 
-    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
     private void renameSelectedServerFileOrDirectoryRequest() {
         if (isAuthorized) {
@@ -571,7 +566,6 @@ public class BoxController implements Initializable, CallBackInterface {
         Platform.runLater(Alerts::renameFailedAlert);
     }
 
-    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
     private void deleteSelectedLocalFileOrDirectoryRequest() {
         if (localFilesTable.getSelectionModel().getSelectedItem() != null) {
@@ -585,7 +579,6 @@ public class BoxController implements Initializable, CallBackInterface {
         }
     }
 
-    //todo может не работать, так как не указан платформенный тред, проверить
     @FXML
     private void deleteSelectedServerFileOrDirectoryRequest() {
         if (isAuthorized) {

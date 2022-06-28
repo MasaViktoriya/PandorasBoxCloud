@@ -24,9 +24,7 @@
             </font>
         </Label>
       <ImageView id="reloadIcon" fx:id="reloadIcon" fitHeight="18.0" fitWidth="23.0" layoutX="299.0" layoutY="90.0" onMouseClicked="#showLocalFiles" pickOnBounds="true" preserveRatio="true">
-         <image>
             <Image url="@reloadicon.png" />
-         </image>
       </ImageView>
         <Label id="myFilesHeader" fx:id="myFilesHeader" layoutX="322.0" layoutY="78.0" prefHeight="43.0" prefWidth="101.0" text="My files" textFill="#d4f6f8">
             <font>
